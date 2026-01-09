@@ -1,32 +1,18 @@
 const mongoose = require("mongoose")
 
-const fileSchema = mongoose.Schema({
-    originalFilename:{
-        type: String,
-        required: true,
+const fileSchema = new mongoose.Schema({
+    ownerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        // required: true,
     },
-    filename: {
-        type: String,
-        required: true,
-    },
-    size:{
-        type: Number,
-        required: true,
-    },
-    path:{
-        type: String,
-        required: true,
-    },
-    actualPath: {
-        type: String,
-        required: true,
-    },
-    filetype: {
-        type: String,
-        required: true,
-    },
+    originalFilename: String,
+    filename: String,
+    size: Number,
+    path: String,
+    actualPath: String,
+    mimetype: String,
+    parentFolderId: mongoose.Schema.Types.ObjectId,
 
-}, { timestamps: true})
+}, { timestamps: true })
 
-
-module.exports = mongoose.model("file", fileSchema)
+module.exports = mongoose.model("File", fileSchema)

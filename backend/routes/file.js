@@ -1,11 +1,14 @@
 const express = require("express")
 const { uploadFile } = require("../controllers/file") 
 const upload = require("../middlewares/multer")
-
-
+const { listFiles, downloadFile, deleteFile } = require("../controllers/file")
+    
 const router = express.Router()
 
 router.post("/upload", upload.single("file"), uploadFile);
+router.get("/list", listFiles);
+router.get("/download/:id", downloadFile);
+router.get("/delete/:id", deleteFile)
 
 // app.get("/files", (req, res) => {    
 //     fs.readdir("../storage", { withFileTypes: true, recursive: true }, (err, files) => {

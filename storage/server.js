@@ -6,6 +6,8 @@ const path = require("path");
 const app = express();
 const PORT = 3000;
 
+app.use("/storage", express.static(path.join(__dirname, "uploads")));
+
 // Storage config
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -28,12 +30,14 @@ app.post("/upload", upload.single("file"), (req, res) => {
 });
 
 app.get("/files", (req, res) => {
-    fs.readdir("./uploads", { withFileTypes: true, recursive: true }, (err, files) => {
-        // files.forEach(file => console.log(file))
-        res.send(files)
-    })
-    // res.send(path.dirname("../storage"))
-})
+    fs.readdir("./uploads", (err, files) => {
+        if (err) return res.status(500).json(err);
+        res.json(files.map(f => ({
+            name: f,
+            url: `/storage/${f}`
+        })));
+    });
+});
 
 app.post("/move", (req, res) => {
     const {curDir, filename, desDir} = req.body
@@ -65,6 +69,27 @@ app.post("/remove", (req, res) => {
         res.send("Removed Successfully")
     })
 })
+
+app.get("/download/:filename", (req, res) => {
+    const filePath = path.join(__dirname, "uploads", req.params.filename);
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found" });
+    }
+    res.download(filePath);
+});
+
+app.delete("/delete/:filename", (req, res) => {
+    const filePath = path.join(__dirname, "uploads", req.params.filename);
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found" });
+    }
+
+    fs.unlink(filePath, err => {
+        if (err) return res.status(500).json(err);
+        res.json({ msg: "File deleted" });
+    });
+});
 
 // Start server
 app.listen(PORT, () => {

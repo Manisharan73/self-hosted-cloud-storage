@@ -23,7 +23,8 @@ app.use(express.static(__dirname));
 
 // Upload endpoint
 app.post("/upload", upload.single("file"), (req, res) => {
-    res.send(req.file);
+    console.log(req.file)
+    res.status(201).json(req.file);
 });
 
 app.get("/files", (req, res) => {

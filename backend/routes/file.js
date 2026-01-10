@@ -21,7 +21,6 @@ router.get("/delete/:id", deleteFile)
 // app.post("/move", (req, res) => {
 //     const {curDir, filename, desDir} = req.body
 
-    
 
 //     fs.cp(`${curDir}/${filename}`, `${desDir}/${filename}`, () => {
 //         console.log("moved successfully")

@@ -1,9 +1,9 @@
 const axios = require("axios");
 const File = require("../models/file");
 const FormData = require("form-data");
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
 
-const URL = process.env.STORAGE_URL;
+// const URL = process.env.STORAGE_URL;
 
 async function uploadFile(req, res) {
     try {

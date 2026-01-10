@@ -3,7 +3,7 @@ const mongoose = require("mongoose")
 const fileSchema = new mongoose.Schema({
     ownerId: {
         type: mongoose.Schema.Types.ObjectId,
-        // required: true,
+        required: false,
     },
     originalFilename: String,
     filename: String,
@@ -15,4 +15,4 @@ const fileSchema = new mongoose.Schema({
 
 }, { timestamps: true })
 
-module.exports = mongoose.model("File", fileSchema)
+module.exports = mongoose.model("file", fileSchema)

@@ -2,8 +2,7 @@ const express = require("express")
 require('dotenv').config();
 
 const { logHandler } = require("./middlewares/log")
-const {connectMongoDB} = require("./connection")
-const {jwtAuth} = require("./middlewares/auth")
+const { jwtAuth } = require("./middlewares/auth")
 
 const fileRouter = require("./routes/file")
 const authRouter = require("./routes/auth")
@@ -11,17 +10,39 @@ const authRouter = require("./routes/auth")
 const app = express()
 const PORT = 3001
 
-connectMongoDB(process.env.MONGODB_URL)
-
 app.use(express.static(__dirname))
 app.use(express.json())
 app.use(logHandler(process.env.LOGS_FILENAME))
 
-app.use("/file", fileRouter)
-app.use("/auth", authRouter)
-app.use("/test", jwtAuth, (req, res) => {
-    console.log(req.user)
-    res.send("Hello world")
+const sequelize = require('./sequelize');
+
+async function initDb() {
+    try {
+        await sequelize.authenticate();
+        console.log('Sequelize connected');
+        await sequelize.sync();
+    } catch (err) {
+        console.error('DB connection failed:', err);
+    }
+}
+
+// app.use("/file", fileRouter)
+// app.use("/auth", authRouter)
+// app.use("/test", jwtAuth, (req, res) => {
+//     console.log(req.user)
+//     res.send("Hello world")
+// })
+
+initDb()
+
+app.get("/test", async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM test_connection');
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Database Error');
+    }
 })
 
 

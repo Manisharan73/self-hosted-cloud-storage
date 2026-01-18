@@ -1,18 +1,41 @@
-const mongoose = require("mongoose")
+const { DataTypes } = require('sequelize');
+const sequelize = require('../sequelize');
 
-const fileSchema = new mongoose.Schema({
-    ownerId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: false,
+const File = sequelize.define(
+    'File',
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+            autoIncrement: true
+        },
+
+        ownerId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'users',
+                key: 'id'
+            },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
+        },
+
+        originalFilename: DataTypes.STRING,
+        filename: DataTypes.STRING,
+        size: DataTypes.BIGINT,
+        path: DataTypes.STRING,
+        mimetype: DataTypes.STRING,
+
+        parentFolderId: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        }
     },
-    originalFilename: String,
-    filename: String,
-    size: Number,
-    path: String,
-    actualPath: String,
-    mimetype: String,
-    parentFolderId: mongoose.Schema.Types.ObjectId,
+    {
+        tableName: 'files',
+        timestamps: true
+    }
+);
 
-}, { timestamps: true })
-
-module.exports = mongoose.model("file", fileSchema)
+module.exports = File;

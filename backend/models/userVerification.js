@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../sequelize');
 
-const Folder = sequelize.define(
-    'Folder',
+const UserVerify = sequelize.define(
+    'UserVerify',
     {
         id: {
             type: DataTypes.INTEGER,
@@ -10,7 +10,7 @@ const Folder = sequelize.define(
             autoIncrement: true
         },
 
-        ownerId: {
+        userId: {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
@@ -21,31 +21,18 @@ const Folder = sequelize.define(
             onUpdate: 'CASCADE'
         },
 
-        name: {
+        secret: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: false,
+            unique: true
         },
 
-        path: {
-            type: DataTypes.STRING,
+        expiresAt: {
+            type: DataTypes.DATE,
             allowNull: false
-        },
-
-        parentFolderId: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            references: {
-                model: 'folders',
-                key: 'id'
-            },
-            onDelete: 'CASCADE', 
-            onUpdate: 'CASCADE'
         }
     },
-    {
-        tableName: 'folders',
-        timestamps: true
-    }
+    { tableName: 'user_verifies', timestamps: true }
 );
 
-module.exports = Folder;
+module.exports = UserVerify;

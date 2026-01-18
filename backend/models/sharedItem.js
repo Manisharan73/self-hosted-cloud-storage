@@ -1,42 +1,75 @@
-const mongoose = require("mongoose")
+const { DataTypes } = require('sequelize');
+const sequelize = require('../sequelize');
 
-const mongoose = require("mongoose")
+const SharedItem = sequelize.define(
+    'SharedItem',
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+            autoIncrement: true
+        },
 
-const SharedItemSchema = new mongoose.Schema({
-    itemId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        index: true,
-    },
-    itemType: {
-        type: String,
-        enum: ["file", "folder"],
-        required: true,
-    },
-    ownerId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        index: true,
-    },
-    sharedWith: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        index: true,
-    },
-    permission: {
-        type: String,
-        enum: ["read", "write"],
-        default: "read",
-    },
-    sharedAt: {
-        type: Date,
-        default: Date.now,
-    },
-}, { timestamps: true, })
+        itemId: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
 
-SharedItemSchema.index(
-    { itemId: 1, sharedWith: 1 },
-    { unique: true }
-)
+        itemType: {
+            type: DataTypes.ENUM('file', 'folder'),
+            allowNull: false
+        },
 
-module.exports = mongoose.model("sharedItem", SharedItemSchema)
+        ownerId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'users',
+                key: 'id'
+            },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
+        },
+
+        sharedWith: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'users',
+                key: 'id'
+            },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
+        },
+
+        permission: {
+            type: DataTypes.ENUM('read', 'write'),
+            allowNull: false,
+            defaultValue: 'read'
+        },
+
+        sharedAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW
+        }
+    },
+    {
+        tableName: 'shared_items',
+        timestamps: true,
+        indexes: [
+            {
+                unique: true,
+                fields: ['itemId', 'sharedWith']
+            },
+            {
+                fields: ['ownerId']
+            },
+            {
+                fields: ['sharedWith']
+            }
+        ]
+    }
+);
+
+module.exports = SharedItem;

@@ -8,7 +8,10 @@ const sequelize = new Sequelize(
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
         dialect: 'mariadb',
-        logging: false
+        logging: false,
+        dialectOptions: {
+            connectTimeout: 10000
+        }
     }
 );
 

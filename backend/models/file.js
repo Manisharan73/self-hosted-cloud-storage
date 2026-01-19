@@ -12,7 +12,7 @@ const File = sequelize.define(
 
         ownerId: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            // allowNull: false,
             references: {
                 model: 'users',
                 key: 'id'

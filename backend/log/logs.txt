@@ -17,3 +17,14 @@
 1768735018087 -- /test -- GET
 1768735097843 -- /test -- GET
 1768735164960 -- /test -- GET
+1768839391465 -- /file/list -- GET
+1768839443864 -- /file/list -- GET
+1768839504558 -- /delete/2 -- GET
+1768839520922 -- /file/delete/2 -- GET
+1768839538378 -- /file/list -- GET
+1768839552885 -- /file/delete/1 -- GET
+1768839566238 -- /file/list -- GET
+1768839672094 -- /file/upload -- POST
+1768839704374 -- /file/upload -- POST
+1768839798186 -- /file/list -- GET
+1768839809443 -- /file/download/3 -- GET

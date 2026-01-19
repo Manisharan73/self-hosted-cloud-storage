@@ -26,12 +26,12 @@ async function initDb() {
     }
 }
 
-// app.use("/file", fileRouter)
-// app.use("/auth", authRouter)
-// app.use("/test", jwtAuth, (req, res) => {
-//     console.log(req.user)
-//     res.send("Hello world")
-// })
+app.use("/file", fileRouter)
+app.use("/auth", authRouter)
+app.use("/test", jwtAuth, (req, res) => {
+    console.log(req.user)
+    res.send("Hello world")
+})
 
 initDb()
 

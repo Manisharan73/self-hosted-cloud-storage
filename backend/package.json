@@ -22,7 +22,9 @@
     "mongoose": "^9.1.2",
     "multer": "^2.0.2",
     "mysql2": "^3.16.1",
+    "nodemailer": "^7.0.12",
     "nodemon": "^3.1.11",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "uuid": "^13.0.0"
   }
 }

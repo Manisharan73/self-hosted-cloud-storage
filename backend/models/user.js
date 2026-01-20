@@ -28,8 +28,8 @@ const User = sequelize.define(
             allowNull: false
         },
         isVerified: {
-            type: DataTypes.STRING,
-            allowNull: true
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         },
 
         lastAccessedAt: {

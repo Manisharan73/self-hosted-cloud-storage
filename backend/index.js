@@ -16,6 +16,13 @@ app.use(logHandler(process.env.LOGS_FILENAME))
 
 const sequelize = require('./sequelize');
 
+const cors = require('cors');
+
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
 async function initDb() {
     try {
         await sequelize.authenticate();

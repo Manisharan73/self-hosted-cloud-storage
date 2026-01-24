@@ -201,3 +201,23 @@
 .file-item:hover {
   background-color: var(--hover-bg);
 }
+
+.upload-btn:disabled {
+    background-color: var(--hover-bg);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Optional: Subtle progress bar at the bottom of the button */
+.upload-btn:disabled::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background-color: var(--primary-blue);
+    width: var(--progress-width, 0%);
+    transition: width 0.3s ease;
+}

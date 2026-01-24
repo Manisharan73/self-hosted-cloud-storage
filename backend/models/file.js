@@ -28,7 +28,13 @@ const File = sequelize.define(
 
         parentFolderId: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: {
+                model: 'folders',
+                key: 'id'
+            },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE'
         }
     },
     {

@@ -124,3 +124,11 @@
 1769169476518 -- /auth/login -- POST
 1769169536189 -- /auth/login -- OPTIONS
 1769169536195 -- /auth/login -- POST
+1769245048260 -- /auth/signup -- OPTIONS
+1769245048279 -- /auth/signup -- POST
+1769245067391 -- /auth/login -- OPTIONS
+1769245067395 -- /auth/login -- POST
+1769245108627 -- /auth/verify/6/e4bb3c38-1db8-4ccb-9da5-fa04a3bd0a876 -- GET
+1769245108857 -- /favicon.ico -- GET
+1769245113385 -- /auth/login -- OPTIONS
+1769245113389 -- /auth/login -- POST

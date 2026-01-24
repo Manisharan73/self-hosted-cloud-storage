@@ -132,3 +132,17 @@
 1769245108857 -- /favicon.ico -- GET
 1769245113385 -- /auth/login -- OPTIONS
 1769245113389 -- /auth/login -- POST
+1769249352946 -- /file/upload -- POST
+1769249522733 -- /file/delete/3 -- GET
+1769249528633 -- /file/upload -- POST
+1769249847424 -- /file/delete/4 -- GET
+1769249861993 -- /file/upload -- POST
+1769249953695 -- /file/delete/5 -- GET
+1769249972212 -- /.well-known/appspecific/com.chrome.devtools.json -- GET
+1769249978237 -- /file/upload -- POST
+1769250034525 -- /.well-known/appspecific/com.chrome.devtools.json -- GET
+1769250042237 -- /file/upload/3 -- POST
+1769250068232 -- /.well-known/appspecific/com.chrome.devtools.json -- GET
+1769250073197 -- /file/upload/3 -- POST
+1769250097700 -- /file/upload/3 -- POST
+1769250119771 -- /folder/delete/3 -- GET

@@ -5,7 +5,7 @@ const { listFiles, downloadFile, deleteFile } = require("../controllers/file")
     
 const router = express.Router()
 
-router.post("/upload", upload.single("file"), uploadFile);
+router.post("/upload/:id", upload.single("file"), uploadFile);
 router.get("/list", listFiles);
 router.get("/download/:id", downloadFile);
 router.get("/delete/:id", deleteFile)

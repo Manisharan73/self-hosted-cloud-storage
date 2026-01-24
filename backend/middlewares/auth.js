@@ -21,14 +21,14 @@ async function jwtAuth(req, res, next) {
         }
 
         // payload = { userId, email, username }
-        const user = await User.findById(payload.id)
-        console.log(payload)
+        const user = await User.findByPk(payload.id)
+        // console.log(payload, user)
 
         if (!user) {
             return res.status(403).send("User not found")
         }
 
-        req.user = user
+        req.user = payload
         next()
     })
 }

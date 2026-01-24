@@ -26,11 +26,6 @@ const Folder = sequelize.define(
             allowNull: false
         },
 
-        path: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-
         parentFolderId: {
             type: DataTypes.INTEGER,
             allowNull: true,

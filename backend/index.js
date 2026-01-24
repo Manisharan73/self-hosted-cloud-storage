@@ -1,11 +1,12 @@
 const express = require("express")
-require('dotenv').config();
+require('dotenv').config()
 
 const { logHandler } = require("./middlewares/log")
 const { jwtAuth } = require("./middlewares/auth")
 
 const fileRouter = require("./routes/file")
 const authRouter = require("./routes/auth")
+const folderRouter = require("./routes/folder")
 
 const app = express()
 const PORT = 3001
@@ -33,26 +34,17 @@ async function initDb() {
     }
 }
 
-app.use("/file", fileRouter)
+app.use("/file", jwtAuth, fileRouter)
+app.use("/folder", jwtAuth, folderRouter)
 app.use("/auth", authRouter)
 app.use("/test", jwtAuth, (req, res) => {
     console.log(req.user)
     res.send("Hello world")
 })
 
-initDb()
 
-app.get("/test", async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM test_connection');
-        res.json(rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Database Error');
-    }
-})
-
-
-app.listen(3001, () => {
-    console.log(`Server is listening on port http://localhost:${PORT}`)
+initDb().then(() => {
+    app.listen(3001, () => {
+        console.log(`Server is listening on port http://localhost:${PORT}`)
+    })
 })

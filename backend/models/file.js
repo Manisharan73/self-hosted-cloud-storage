@@ -24,12 +24,11 @@ const File = sequelize.define(
         originalFilename: DataTypes.STRING,
         filename: DataTypes.STRING,
         size: DataTypes.BIGINT,
-        path: DataTypes.STRING,
         mimetype: DataTypes.STRING,
 
         parentFolderId: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: false
         }
     },
     {

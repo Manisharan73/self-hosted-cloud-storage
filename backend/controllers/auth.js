@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt")
 const { Op } = require("sequelize")
 const nodemailer = require("nodemailer")
 const { v4: uuidv4 } = require("uuid")
+const {createRootDir} = require("./folder")
 require("dotenv").config()
 
 let transporter = nodemailer.createTransport({
@@ -57,11 +58,13 @@ async function userLogin(req, res) {
             return res.status(401).send("Incorrect credentials...");
         }
 
+
         const payload = {
-            id: user._id,
+            id: user.id,
             username: user.username,
-            email: user.email,
-            name: user.name
+            // email: user.email,
+            // name: user.name,
+            uniqueName: user.uniqueName
         };
 
         const accessToken = jwt.sign(
@@ -125,6 +128,12 @@ async function userSignup(req, res) {
             lastAccessedAt: new Date()
         })
 
+        const id = newUser.id
+        const uniqueString = (uuidv4() + id).replace(/-/g, "").slice(0, 15)
+
+        newUser.uniqueName = uniqueString
+        newUser.save()
+
         await sendVerificationEmail(
             { id: newUser.id, email: newUser.email },
             res
@@ -186,6 +195,8 @@ async function userVerify(req, res) {
         );
 
         await UserVerification.destroy({ where: { userId } });
+
+        await createRootDir(userId)
 
         return res.status(200).json({
             success: true,

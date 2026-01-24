@@ -31,7 +31,10 @@ const User = sequelize.define(
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
-
+        uniqueName:{
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         lastAccessedAt: {
             type: DataTypes.DATE,
             allowNull: true,

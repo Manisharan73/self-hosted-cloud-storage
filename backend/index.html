@@ -1,15 +1,46 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Storage server</title>
-  </head>
-  <body>
-    <form action="/file/upload" method="POST" enctype="multipart/form-data">
-      <input type="file" name="file" />
-      <button type="submit">Upload</button>
-    </form>
-  </body>
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Storage server</title>
+    </head>
+
+    <body>
+        <form id="uploadForm">
+            <input type="file" id="fileInput" name="file" required />
+            <button type="submit">Upload</button>
+        </form>
+
+        <script>
+            document
+                .getElementById("uploadForm")
+                .addEventListener("submit", function (e) {
+                    e.preventDefault(); // 🚫 stop normal form submit
+
+                    const fileInput = document.getElementById("fileInput");
+                    const formData = new FormData();
+                    formData.append("folderId", 3)
+                    formData.append("file", fileInput.files[0]);
+
+                    fetch("/file/upload/3", {
+                        method: "POST",
+                        headers: {
+                            "Authorization":
+                                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywidXNlcm5hbWUiOiJ5YXNoQGFyY2giLCJ1bmlxdWVOYW1lIjoiNGYxZTFlNzJlMDA2NDZkIiwiaWF0IjoxNzY5MjQ1NjMyLCJleHAiOjE3Njk4NTA0MzJ9.STJko3b_7igvZShZyu5j5VOIrfPmqK_4HSzcKE5SbA0"
+                        },
+                        body: formData
+                    })
+                        .then(res => {
+                            if (!res.ok) throw new Error("Upload failed");
+                            return res.json();
+                        })
+                        .then(data => console.log("Success:", data))
+                        .catch(err => console.error("Error:", err));
+                });
+        </script>
+    </body>
+
 </html>

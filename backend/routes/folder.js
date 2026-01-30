@@ -1,10 +1,11 @@
 const express = require("express")
-const {createFolder, deleteFolder} = require("../controllers/folder")
+const {createFolder, deleteFolder, moveFolder, copyFolder} = require("../controllers/folder")
 
 const router = new express.Router()
 
-router.use("/create", createFolder)
-router.use("/delete/:id", deleteFolder)
+router.post("/create", createFolder)
+router.get("/delete/:id", deleteFolder)
+router.get("/move/:folderId/:to", moveFolder)
+router.get("/copy/:folderId/:to", copyFolder)
 
 module.exports = router
- 

@@ -1,14 +1,17 @@
-const axios = require("axios");
-const File = require("../models/file");
-const FormData = require("form-data");
+const axios = require("axios")
+const File = require("../models/file")
+const FormData = require("form-data")
 const Folder = require("../models/folder")
-// const mongoose = require("mongoose");
 
-// const URL = process.env.STORAGE_URL;
 
 async function uploadFile(req, res) {
     try {
         let folderID = req.params.id
+
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ msg: "Unauthorized" });
+        }
+
         if (!req.file) {
             return res.status(400).json({ error: "No file received" });
         }
@@ -20,8 +23,14 @@ async function uploadFile(req, res) {
                     parentFolderId: null
                 }
             })
+            if (!folder) return res.status(400).json({ error: "Root folder missing" });
             folderID = folder.id
-        } 
+        } else {
+            const folder = await Folder.findByPk(folderID);
+            if (!folder || folder.ownerId !== req.user.id) {
+                return res.status(403).json({ msg: "Invalid folder" });
+            }
+        }
 
         console.log("Authenticated user:", req.user);
 
@@ -98,6 +107,10 @@ async function downloadFile(req, res) {
             return res.status(404).json({ error: "Not found" });
         }
 
+        if (file.ownerId !== req.user.id) {
+            return res.status(403).json({ msg: "Forbidden" });
+        }
+
         const response = await axios.get(
             `${process.env.STORAGE_URL}/download/${file.filename}`,
             {
@@ -123,10 +136,14 @@ async function downloadFile(req, res) {
 
 async function deleteFile(req, res) {
     try {
-        const file = await File.findByPk(req.params.id);
+        const file = await File.findByPk(req.params.id)
 
         if (!file) {
-            return res.status(404).json({ error: "File not found" });
+            return res.status(404).json({ error: "File not found" })
+        }
+
+        if (file.ownerId !== req.user.id) {
+            return res.status(403).json({ msg: "Forbidden" });
         }
 
         await axios.delete(
@@ -136,15 +153,61 @@ async function deleteFile(req, res) {
                     user: req.user
                 }
             }
-        );
+        )
 
-        await file.destroy();
+        await file.destroy()
 
-        res.json({ msg: "File Deleted Successfully" });
+        res.json({ msg: "File Deleted Successfully" })
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Delete Failed" });
+        res.status(500).json({ error: "Delete Failed" })
     }
+}
+
+async function deleteMultipleFiles(req, res) {
+    const ids = req.body.ids;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ msg: "ids array is required and cannot be empty" });
+    }
+
+    const files = await File.findAll({
+        where: {
+            id: ids,
+            ownerId: req.user.id
+        }
+    })
+
+    if (files.length === 0) {
+        return res.status(404).json({ msg: "No files found" });
+    }
+
+
+    const filenames = files.filter(file => file.filename).map(file => file.filename)
+
+    try {
+        const result = await axios.post(
+            `${process.env.STORAGE_URL}/delete`,
+            {
+                filenames,
+                user: req.user
+            }
+        );
+
+        if (result.data?.status) {
+            await Promise.all(files.map(file => file.destroy()));
+        }
+
+        return res.status(200).json({ msg: "Files deleted successfully" });
+
+    } catch (err) {
+        console.error("Delete error:", err);
+        return res.status(500).json({
+            msg: "Failed to delete files",
+            error: err.message
+        });
+    }
+
 }
 
 async function moveFile(req, res) {
@@ -162,5 +225,6 @@ module.exports = {
     downloadFile,
     deleteFile,
     moveFile,
-    copyFile
+    copyFile,
+    deleteMultipleFiles
 }

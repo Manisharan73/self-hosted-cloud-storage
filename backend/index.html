@@ -22,14 +22,14 @@
 
                     const fileInput = document.getElementById("fileInput");
                     const formData = new FormData();
-                    formData.append("folderId", 3)
+                    // formData.append("folderId", )
                     formData.append("file", fileInput.files[0]);
 
-                    fetch("/file/upload/3", {
+                    fetch("/file/upload/6", {
                         method: "POST",
                         headers: {
                             "Authorization":
-                                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwidXNlcm5hbWUiOiJYZW5pXzJrMjYiLCJ1bmlxdWVOYW1lIjpudWxsLCJpYXQiOjE3NjkyNTEwNzIsImV4cCI6MTc2OTg1NTg3Mn0.z7nUCWrerFm-F5FA_JaKssR0bcjPGUckmVzMY2Ldik8"
+                                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywidXNlcm5hbWUiOiJ5YXNoQGFyY2giLCJ1bmlxdWVOYW1lIjoiNGYxZTFlNzJlMDA2NDZkIiwiaWF0IjoxNzY5MjQ1NjMyLCJleHAiOjE3Njk4NTA0MzJ9.STJko3b_7igvZShZyu5j5VOIrfPmqK_4HSzcKE5SbA0"
                         },
                         body: formData
                     })

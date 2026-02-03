@@ -3,6 +3,7 @@ import '../styles/Login_SignUp.css'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 
+
 const Login_SignUp = () => {
     const [isLogin, setIsLogin] = useState(true)
     const [loading, setLoading] = useState(false)
@@ -34,7 +35,7 @@ const Login_SignUp = () => {
         e.preventDefault();
         setLoading(true);
 
-        const baseUrl = 'http://localhost:3001';
+        const baseUrl = import.meta.env.VITE_BACKEND;
         const endpoint = isLogin ? '/auth/login' : '/auth/signup';
 
         const payload = isLogin
@@ -47,11 +48,13 @@ const Login_SignUp = () => {
             };
 
         try {
-            const response = await axios.post(`${baseUrl}${endpoint}`, payload);
+            const response = await axios.post(`${baseUrl}${endpoint}`, payload, {
+                withCredentials: true
+            })
 
             if (response.status === 200 || response.status === 201) {
                 if (isLogin) {
-                    localStorage.setItem('token', response.data.accessToken);
+                    localStorage.setItem('token', response.data.accessToken)
 
                     navigate('/', { replace: true });
                 } else {

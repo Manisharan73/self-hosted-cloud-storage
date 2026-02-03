@@ -90,13 +90,17 @@ async function uploadFile(req, res) {
 
 async function listFiles(req, res) {
     try {
+        const {} = req.query
         const files = await File.findAll({
-            raw: true
-        });
-        return res.json(files);
+            raw: true,
+            where: {
+                ownerId: req.user.id
+            }
+        })
+        return res.json(files)
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: "DB error" });
+        return res.status(500).json({ error: "DB error" })
     }
 }
 
@@ -215,7 +219,7 @@ async function moveFile(req, res) {
 }
 
 async function copyFile(req, res) {
-
+    
 }
 
 

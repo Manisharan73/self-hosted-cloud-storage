@@ -1,5 +1,7 @@
 const express = require("express")
 require('dotenv').config()
+const cors = require('cors');
+const cookieParser = require('cookie-parser')
 
 const { logHandler } = require("./middlewares/log")
 const { jwtAuth } = require("./middlewares/auth")
@@ -14,10 +16,9 @@ const PORT = 3001
 app.use(express.static(__dirname))
 app.use(express.json())
 app.use(logHandler(process.env.LOGS_FILENAME))
+app.use(cookieParser())
 
 const sequelize = require('./sequelize');
-
-const cors = require('cors');
 
 app.use(cors({
     origin: 'http://localhost:5173',

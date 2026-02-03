@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/Home.css';
 import { MdOutlineFileUpload } from "react-icons/md";
 import { FaSearch } from 'react-icons/fa';
@@ -15,35 +15,45 @@ const Home = () => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
 
+    useEffect(() => {
+        const tokenValidate = async () => {
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/test`, {
+                withCredentials: true,
+            })
+            
+            console.log(res.data)
+        }
+        tokenValidate()
+    }, [])
+
     const handleFileUpload = async (event) => {
-        const file = event.target.files[0];
+        const file = event.target.files[0]
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('file', file);
+        const formData = new FormData()
+        formData.append('file', file)
 
         setIsUploading(true);
         setUploadProgress(0);
 
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post('http://localhost:3001/file/upload/1', formData, {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND}/file/upload/1`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}` //
                 },
                 onUploadProgress: (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    setUploadProgress(percentCompleted);
-                }
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+                    setUploadProgress(percentCompleted)
+                },
+                withCredentials: true
             });
 
             if (response.status === 200) {
-                alert("File uploaded successfully!");
-                // Refresh your file list logic here
+                alert("File uploaded successfully!")
             }
         } catch (error) {
-            console.error("Upload error:", error);
+            console.error("Upload error:", error)
             alert("Upload failed.");
         } finally {
             setIsUploading(false);
@@ -62,7 +72,6 @@ const Home = () => {
                             <input type="text" placeholder="Search your files..." />
                         </div>
                         <div className="header-actions">
-                            {/* Hidden file input */}
                             <input
                                 type="file"
                                 id="file-upload"

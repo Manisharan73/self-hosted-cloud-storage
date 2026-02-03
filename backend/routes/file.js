@@ -5,9 +5,9 @@ const { listFiles, downloadFile, deleteFile, deleteMultipleFiles } = require("..
     
 const router = express.Router()
 
-router.post("/upload/:id", upload.single("file"), uploadFile);
-router.get("/list", listFiles);
-router.get("/download/:id", downloadFile);
+router.post("/upload/:id", upload.single("file"), uploadFile)
+router.get("/list", listFiles)
+router.get("/download/:id", downloadFile)
 router.get("/delete/:id", deleteFile)
 router.post("/delete", deleteMultipleFiles)
 

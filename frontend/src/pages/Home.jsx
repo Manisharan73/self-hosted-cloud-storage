@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import '../styles/Home.css'
-import { MdOutlineFileUpload } from "react-icons/md"
+import { MdOutlineFileUpload, MdOutlineFolder } from "react-icons/md"
 import { FaSearch } from 'react-icons/fa'
 import Sidebar from '../components/Sidebar'
 import axios from 'axios'
@@ -64,6 +64,30 @@ const Home = () => {
         }
     }
 
+    const handleCreateFolder = async () => {
+        const name = prompt("Enter folder name")
+
+        if(!name) {
+            return
+        }
+        
+        try {
+            await axios.post(`${import.meta.env.VITE_BACKEND}/folder/create`,
+                {
+                    name,
+                    parentFolderId: currentFolderID
+                },
+                {withCredentials: true}
+            )
+
+            alert("Folder created succesfully!")
+        }
+        catch(err) {
+            console.log(err)
+            alert("Failed to create folder")
+        }
+    }
+
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
             <Sidebar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
@@ -81,6 +105,8 @@ const Home = () => {
                             <button className="upload-btn" onClick={() => document.getElementById('file-upload').click()} disabled={isUploading}>
                                 <MdOutlineFileUpload /> <span>{isUploading ? `Uploading ${uploadProgress}%` : "Upload file"}</span>
                             </button>
+
+                            <button className='upload-btn' onClick={handleCreateFolder}><MdOutlineFolder />Create Folder</button>
                         </div>
                     </header>
 

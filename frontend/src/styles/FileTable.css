@@ -1,3 +1,6 @@
+/* =========================
+   TABLE LAYOUT
+========================= */
 .file-manager-table {
     width: 100%;
     border-collapse: separate;
@@ -5,46 +8,47 @@
     margin-top: 20px;
 }
 
+/* =========================
+   TABLE ROW
+========================= */
 .table-row {
+    position: relative;
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    margin-top: 10px;
-}
-
-.table-row {
-    position: relative;
-    transition: all 0.2s ease-out;
+    transition:
+        transform 0.2s ease-in-out,
+        background-color 0.2s ease-in-out,
+        box-shadow 0.2s ease-in-out;
 }
 
 .table-row:hover {
-    transform: translate3d(10px, 0px, 0px);
+    transform: translateX(10px);
     background-color: var(--hover-bg);
-}
-
-.table-row::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -15px;
-    width: 15px;
-    height: 100%;
-    background: transparent;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
 .table-row.active {
     transform: translateX(-5px);
     outline: 2px solid var(--primary-blue);
     background-color: var(--hover-bg);
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
+/* Prevent hover animation when menu is open */
+.table-row:has(.action_menu.active):hover {
+    transform: none;
+}
+
+/* =========================
+   CELLS
+========================= */
 .table-row td {
     padding: 16px;
     color: var(--text-main);
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
+    background-color: inherit;
 }
 
 .name-cell {
@@ -57,21 +61,21 @@
 }
 
 .meta-cell {
-    color: var(--text-muted);
     font-size: 14px;
+    color: var(--text-muted);
 }
 
-
-/*  */
-
 .action-cell {
+    text-align: right;
     border-right: 1px solid var(--border-color);
     border-top-right-radius: 12px;
     border-bottom-right-radius: 12px;
-    text-align: right;
     color: var(--text-muted);
 }
 
+/* =========================
+   ACTION MENU
+========================= */
 .action-container {
     position: relative;
     display: inline-block;
@@ -83,44 +87,59 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--text-muted);
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
 }
 
-.action_menu:hover, .action_menu.active {
+.action_menu:hover,
+.action_menu.active {
     background-color: var(--hover-bg);
     color: var(--primary-blue);
     transform: scale(1.1);
 }
 
+/* =========================
+   DROPDOWN MENU
+========================= */
 .dropdown-menu {
     position: absolute;
-    transform: translateZ(10);
+    top: calc(100% + 8px);
     right: 0;
-    top: 100%;
-    margin-top: 8px;
+
+    min-width: 140px;
+    z-index: 100;
+
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-    min-width: 140px;
     overflow: hidden;
+
+    /* Isolated animation */
     animation: menuFadeIn 0.2s ease-out;
+    transform-origin: top right;
 }
 
 .dropdown-menu button {
     width: 100%;
     padding: 10px 16px;
-    text-align: left;
+
     background: none;
     border: none;
-    color: var(--text-main);
+    text-align: left;
+
     font-size: 13px;
+    color: var(--text-main);
     cursor: pointer;
-    transition: background 0.2s;
+
+    transition: background-color 0.15s ease;
 }
 
 .dropdown-menu button:hover {
@@ -132,10 +151,13 @@
     border-top: 1px solid var(--border-color);
 }
 
+/* =========================
+   DROPDOWN ANIMATION
+========================= */
 @keyframes menuFadeIn {
     from {
         opacity: 0;
-        transform: translateY(-10px) scale(0.95);
+        transform: translateY(-6px) scale(0.95);
     }
     to {
         opacity: 1;

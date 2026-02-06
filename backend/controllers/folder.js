@@ -1,5 +1,4 @@
 const axios = require("axios")
-const User = require("../models/user")
 const Folder = require("../models/folder")
 const File = require("../models/file")
 
@@ -60,48 +59,52 @@ async function copyFolderTree(sourceFolderId, targetParentId, userId) {
 const isEmpty = (v) => v === undefined || v === null || v === "";
 
 async function createFolder(req, res) {
-    const body = req.body
-    if (!req.user || !req.user.id) {
-        return res.status(401).json({ msg: "Unauthorized" });
-    }
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ msg: "Unauthorized" })
+        }
 
-    if (!body || isEmpty(body.name)) {
-        return res.status(400).json({ msg: "Folder name is required" });
-    }
-    let folderID
+        const { name, parentFolderId } = req.body
 
-    if (!body.parentFolderId) {
-        const folder = await Folder.findOne({
-            where: {
+        if (!name) {
+            return res.status(400).json({ msg: "Folder name is required" })
+        }
+
+        let finalParentId = parentFolderId
+
+        // If no parent → attach to root
+        if (!parentFolderId) {
+            const rootFolder = await Folder.findOne({
                 ownerId: req.user.id,
                 parentFolderId: null
-            }
-        })
-        if (!rootFolder) {
-            return res.status(404).json({ msg: "Root folder not found" });
-        }
-        folderID = folder.id
-    } else
-        folderID = body.parentFolderId
+            })
 
-    Folder.create({
-        ownerId: body.userId,
-        name: body.name,
-        parentFolderId: folderID
-    }).then(() => {
-        console.log("Folder is created for the user")
+            if (!rootFolder) {
+                return res.status(404).json({ msg: "Root folder not found" })
+            }
+
+            finalParentId = rootFolder._id
+        }
+
+        await Folder.create({
+            ownerId: req.user.id,
+            name,
+            parentFolderId: finalParentId
+        })
+
         return res.status(201).json({
             status: true,
             msg: "Folder created successfully"
         })
-    }).catch((err) => {
-        console.log(err)
+
+    } catch (err) {
+        console.error(err)
         return res.status(500).json({
-            status: true,
+            status: false,
             msg: "Folder creation failed",
-            err: err
+            err
         })
-    })
+    }
 }
 
 async function deleteFolder(req, res) {
@@ -207,15 +210,10 @@ async function copyFolder(req, res) {
     }))
 }
 
-async function listFolders(req, res) {
-
-}
-
 module.exports = {
     createRootDir,
     createFolder,
     deleteFolder,
     moveFolder,
     copyFolder,
-    listFolders
 }

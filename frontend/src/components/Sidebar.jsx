@@ -1,6 +1,6 @@
 import '../styles/Sidebar.css'
 import { useNavigate } from 'react-router-dom';
-import { FaHome, FaSearch, FaBell } from "react-icons/fa";
+import { FaHome, FaBell } from "react-icons/fa";
 import { IoMdPhotos, IoIosDocument } from "react-icons/io";
 import { BiSolidVideos } from "react-icons/bi";
 import { MdAudiotrack } from "react-icons/md";
@@ -22,9 +22,6 @@ const Sidebar = ({ isDarkMode, toggleTheme }) => {
             <div className="sidebar-top">
                 <div className="nav-item active">
                     <FaHome className="nav-icon" /> <span>Home</span>
-                </div>
-                <div className="nav-item">
-                    <FaSearch className="nav-icon" /> <span>Search</span>
                 </div>
                 <div className="nav-item">
                     <FaBell className="nav-icon" /> <span>Notifications</span>

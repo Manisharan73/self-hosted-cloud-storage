@@ -75,8 +75,8 @@ async function userLogin(req, res) {
 
         res.cookie("token", accessToken, {
             httpOnly: false,
-            secure: true,
-            sameSite: "Strict",
+            secure: false,
+            sameSite: "Lax",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 

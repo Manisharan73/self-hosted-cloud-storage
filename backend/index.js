@@ -21,7 +21,7 @@ app.use(cookieParser())
 const sequelize = require('./sequelize');
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'http://100.116.29.119:5173' ],
     credentials: true
 }));
 

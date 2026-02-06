@@ -1,0 +1,15 @@
+:root {
+    /* Existing Variables */
+    --sidebar-bg: #f4f5f7;
+    --sidebar-width: 260px;
+    --primary-blue: #4c84ff;
+    --text-main: #333;
+    --text-muted: #666;
+    --hover-bg: #e8ebf0;
+
+    /* New Content Specific Variables */
+    --content-bg: #ffffff;
+    --card-bg: #fafafa;
+    --item-bg: #f8f9fa;
+    --border-color: rgba(0, 0, 0, 0.05);
+}

@@ -1,0 +1,144 @@
+.file-manager-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    margin-top: 20px;
+}
+
+.table-row {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    margin-top: 10px;
+}
+
+.table-row {
+    position: relative;
+    transition: all 0.2s ease-out;
+}
+
+.table-row:hover {
+    transform: translate3d(10px, 0px, 0px);
+    background-color: var(--hover-bg);
+}
+
+.table-row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -15px;
+    width: 15px;
+    height: 100%;
+    background: transparent;
+}
+
+.table-row.active {
+    transform: translateX(-5px);
+    outline: 2px solid var(--primary-blue);
+    background-color: var(--hover-bg);
+    border-radius: 10px;
+}
+
+.table-row td {
+    padding: 16px;
+    color: var(--text-main);
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.name-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-left: 1px solid var(--border-color);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+
+.meta-cell {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+
+/*  */
+
+.action-cell {
+    border-right: 1px solid var(--border-color);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    text-align: right;
+    color: var(--text-muted);
+}
+
+.action-container {
+    position: relative;
+    display: inline-block;
+}
+
+.action_menu {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-muted);
+}
+
+.action_menu:hover, .action_menu.active {
+    background-color: var(--hover-bg);
+    color: var(--primary-blue);
+    transform: scale(1.1);
+}
+
+.dropdown-menu {
+    position: absolute;
+    transform: translateZ(10);
+    right: 0;
+    top: 100%;
+    margin-top: 8px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    min-width: 140px;
+    overflow: hidden;
+    animation: menuFadeIn 0.2s ease-out;
+}
+
+.dropdown-menu button {
+    width: 100%;
+    padding: 10px 16px;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdown-menu button:hover {
+    background-color: var(--hover-bg);
+}
+
+.dropdown-menu .delete-opt {
+    color: #ff4d4d;
+    border-top: 1px solid var(--border-color);
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

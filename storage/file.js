@@ -82,4 +82,29 @@ router.delete("/delete/:filename", (req, res) => {
     })
 })
 
+router.post("/copy/:filename", (req, res) => {
+    console.log(req.body)
+    const uniqueName = req.body.uniqueName
+    const dir = path.join(__dirname, "uploads", uniqueName)
+    const filePath = path.join(dir, req.params.filename)
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ status: false, error: "File not found" })
+    }
+
+    const desFilename = req.params.filename.split(".")[0] + "-copy." + req.params.filename.split(".")[1]
+
+    fs.copyFile(filePath, path.join(dir, desFilename), fs.constants.COPYFILE_EXCL, (err) => {
+        if (err) {
+            console.log('Destination file already exists!');
+        }
+    })
+
+    res.status(200).json({
+        msg: "Copy successful",
+        filename: desFilename
+    })
+})
+
+
 module.exports = router

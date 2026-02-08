@@ -3,11 +3,22 @@ import "../styles/FileTable.css"
 import fileIcon from "../assets/default.svg"
 import folderIcon from "../assets/folder-blue.svg"
 import { useState, useEffect } from "react"
+import FileContextMenu from "./FileContextMenu"
 
-const FileTable = ({ data, selectedId, onSelect, selectedItem, setItems, setParentFolderId, setCurrentFolderId, refreshFiles, currentFolderId }) => {
-    const [activeMenuId, setActiveMenuId] = useState(null)
+const initailContextMenu = {
+    show: false,
+    x: 0,
+    y: 0
+}
 
-    const onCLickHandler = async (item) => {
+const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, setCurrentFolderId, refreshFiles, currentFolderID }) => {
+    const [contextMenu, setContextMenu] = useState(initailContextMenu)
+    const [selectedItem, setSelectedItem] = useState(null)
+    const [previewUrl, setPreviewUrl] = useState(null)
+    const [previewType, setPreviewType] = useState(null)
+
+
+    const onDoubleCLickHandler = async (item) => {
         if (item.type === "Folder") {
             const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${item.id}`, { withCredentials: true })
             setItems(res.data?.combinedData)
@@ -19,7 +30,8 @@ const FileTable = ({ data, selectedId, onSelect, selectedItem, setItems, setPare
                 responseType: "blob"
             })
             const url = URL.createObjectURL(res.data)
-            window.open(url)
+            setPreviewUrl(url)
+            setPreviewType(blob.type)
         }
     }
 
@@ -40,8 +52,6 @@ const FileTable = ({ data, selectedId, onSelect, selectedItem, setItems, setPare
     }
 
     const formatSize = (size) => {
-        const s = Number(size)
-
         if (size < 1024) {
             return `${size} B`
         } else if (size / (2 ** 10) < 1024) {
@@ -65,25 +75,21 @@ const FileTable = ({ data, selectedId, onSelect, selectedItem, setItems, setPare
         else onSelect(item)
     }
 
+    const handleContextMenu = (e, item) => {
+        e.preventDefault()
 
-    useEffect(() => {
-        const closeMenu = () => setActiveMenuId(null)
-        window.addEventListener('click', closeMenu)
-        return () => window.removeEventListener('click', closeMenu)
-    }, [])
-
-    const toggleMenu = (e, id) => {
-        e.stopPropagation()
-        setActiveMenuId(activeMenuId === id ? null : id)
+        const { pageX, pageY } = e
+        setContextMenu({
+            show: true,
+            x: pageX,
+            y: pageY
+        })
+        setSelectedItem(item)
     }
 
-    const handleDelete = async (item) => {
-        const baseUrl = import.meta.env.VITE_BACKEND
-        const action = item.type === "Folder" ? "folder/delete" : "file/delete"
-        await axios.get(`${baseUrl}/${action}/${item.id}`, { withCredentials: true }).then(refreshFiles(currentFolderId))
-    }
+    const closeContextMenu = () => { setContextMenu(initailContextMenu) }
 
-    return (
+    return (<>
         <table className="file-manager-table">
             <thead>
                 <tr>
@@ -93,13 +99,15 @@ const FileTable = ({ data, selectedId, onSelect, selectedItem, setItems, setPare
                     <th></th>
                 </tr>
             </thead>
+
             <tbody>
                 {data.map((item) => (
                     <tr
                         key={item.id}
                         // onClick={() => onSelectHandler(item)}
-                        onDoubleClick={() => onCLickHandler(item)}
+                        onDoubleClick={() => onDoubleCLickHandler(item)}
                         className={`table-row ${selectedId === item.id ? 'active' : ''}`}
+                        onContextMenu={(e) => handleContextMenu(e, item)}
                     >
                         <td className="name-cell">
                             <span className={`icon ${item.type === 'Folder' ? 'folder-color' : 'file-color'}`}>
@@ -110,29 +118,41 @@ const FileTable = ({ data, selectedId, onSelect, selectedItem, setItems, setPare
                         <td className="meta-cell">{formatDate(item.date) || '---'}</td>
                         <td className="meta-cell">{formatSize(item.size) || '---'}</td>
 
-                        <td className="action-cell">
-                            <div className="action-container">
-                                <div
-                                    className={`action_menu ${activeMenuId === item.id ? 'active' : ''}`}
-                                    onClick={(e) => toggleMenu(e, item.id)}
-                                >
-                                    •••
-                                </div>
 
-                                {activeMenuId === item.id && (
-                                    <div className="dropdown-menu">
-                                        <button onClick={() => handleDownload(item)}>Download</button>
-                                        <button onClick={() => handleRename(item)}>Rename</button>
-                                        <button className="delete-opt" onClick={() => handleDelete(item)}>Delete</button>
-                                    </div>
-                                )}
-                            </div>
-                        </td>
                     </tr>
                 ))}
             </tbody>
         </table>
+        {contextMenu.show && <FileContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            refreshFiles={refreshFiles}
+            selectedItem={selectedItem}
+            closeContextMenu={closeContextMenu}
+            currentFolderID={currentFolderID}
+            onSelect={onSelect}
+        />}
+    </>
     )
 }
+
+// <td className="action-cell">
+//     <div className="action-container">
+//         <div
+//             className={`action_menu ${activeMenuId === item.id ? 'active' : ''}`}
+//             onClick={(e) => toggleMenu(e, item.id)}
+//         >
+//             •••
+//         </div>
+
+//         {activeMenuId === item.id && (
+//             <div className="dropdown-menu">
+//                 <button onClick={() => handleDownload(item)}>Download</button>
+//                 <button onClick={() => handleRename(item)}>Rename</button>
+//                 <button className="delete-opt" onClick={() => handleDelete(item)}>Delete</button>
+//             </div>
+//         )}
+//     </div>
+// </td>
 
 export default FileTable

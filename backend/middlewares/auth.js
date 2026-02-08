@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken")
 const User = require("../models/user")
 
 async function jwtAuth(req, res, next) {
-    console.log("User middleware triggered");
     const authHeader = req.headers.authorization?.trim()
 
     let token = null
@@ -24,13 +23,15 @@ async function jwtAuth(req, res, next) {
             return res.status(403).send("Invalid or expired token")
         }
 
+        console.log("User middleware triggered");
+
         const user = await User.findByPk(payload.id)
 
         if (!user) {
             return res.status(403).send("User not found")
         }
 
-        req.user = payload
+        req.user = user.get({ plain: true })
         next()
     })
 }

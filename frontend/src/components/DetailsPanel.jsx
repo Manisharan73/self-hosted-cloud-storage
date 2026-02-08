@@ -2,8 +2,9 @@ import folderIcon from "../assets/folder-blue.svg"
 import "../styles/DetailsPanel.css"
 import axios from "axios"
 import fileIcon from "../assets/default.svg"
+import { IoClose } from "react-icons/io5"
 
-const DetailsPanel = ({ item }) => {
+const DetailsPanel = ({ item, onSelect }) => {
     if (!item) return <aside className="details-panel empty"></aside>
 
     const icon = (item) => {
@@ -13,8 +14,18 @@ const DetailsPanel = ({ item }) => {
             return fileIcon
     }
 
+    
+
     return (
         <aside className="details-panel">
+            <button 
+                className="close-panel-btn" 
+                onClick={() => onSelect(null)}
+                aria-label="Close panel"
+            >
+                <IoClose size={24} />
+            </button>
+
             <div className="preview-section">
                 <div className={`preview-box ${item.type === 'Folder' ? 'bg-folder' : 'bg-file'}`}>
                     <span className="preview-icon"><img src={icon(item)} alt="" width={32} height={32}/></span>

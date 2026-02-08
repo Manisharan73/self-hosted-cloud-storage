@@ -121,3 +121,34 @@ input:checked+.slider {
 input:checked+.slider:before {
     transform: translateX(20px);
 }
+
+.details-panel {
+    position: relative; /* Needed to anchor the absolute button */
+    /* ... existing styles ... */
+}
+
+.close-panel-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-panel-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-main);
+    transform: scale(1.1);
+}
+
+.preview-section {
+    margin-top: 20px;
+}

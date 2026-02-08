@@ -3,7 +3,7 @@ const Folder = require("../models/folder")
 const File = require("../models/file")
 
 async function createRootDir(userId) {
-    const rootFolder = Folder.create({
+    await Folder.create({
         ownerId: userId,
         name: "root",
         parentFolderId: null
@@ -15,20 +15,20 @@ async function createRootDir(userId) {
 }
 
 async function copyFolderTree(sourceFolderId, targetParentId, userId) {
-    const queue = [{ sourceId: sourceFolderId, targetParentId }];
+    const queue = [{ sourceId: sourceFolderId, targetParentId }]
 
     while (queue.length > 0) {
-        const { sourceId, targetParentId } = queue.shift();
+        const { sourceId, targetParentId } = queue.shift()
 
-        const folder = await Folder.findById(sourceId);
+        const folder = await Folder.findById(sourceId)
 
         const newFolder = await Folder.create({
             ownerId: userId,
             name: folder.name,
             parentFolderId: targetParentId
-        });
+        })
 
-        const files = await File.find({ parentFolderId: sourceId });
+        const files = await File.find({ parentFolderId: sourceId })
 
         if (files.length > 0) {
             const newFiles = files.map(f => ({
@@ -40,23 +40,21 @@ async function copyFolderTree(sourceFolderId, targetParentId, userId) {
                 path: f.path,
                 actualPath: f.actualPath,
                 parentFolderId: newFolder._id
-            }));
+            }))
 
-            await File.insertMany(newFiles); 
+            await File.insertMany(newFiles) 
         }
 
-        const subFolders = await Folder.find({ parentFolderId: sourceId });
+        const subFolders = await Folder.find({ parentFolderId: sourceId })
 
         for (const sub of subFolders) {
             queue.push({
                 sourceId: sub._id,
                 targetParentId: newFolder._id
-            });
+            })
         }
     }
 }
-
-const isEmpty = (v) => v === undefined || v === null || v === "";
 
 async function createFolder(req, res) {
     try {
@@ -72,7 +70,6 @@ async function createFolder(req, res) {
 
         let finalParentId = parentFolderId
 
-        // If no parent → attach to root
         if (!parentFolderId) {
             const rootFolder = await Folder.findOne({
                 ownerId: req.user.id,
@@ -108,10 +105,10 @@ async function createFolder(req, res) {
 }
 
 async function deleteFolder(req, res) {
-    const folderId = req.params.id;
+    const folderId = req.params.id
 
     if (!folderId) {
-        return res.status(400).json({ msg: "Folder ID is required" });
+        return res.status(400).json({ msg: "Folder ID is required" })
     }
 
     const folder = await Folder.findByPk(folderId)
@@ -121,7 +118,7 @@ async function deleteFolder(req, res) {
     }
 
     if (folder.ownerId !== req.user.id) {
-        return res.status(403).json({ msg: "Forbidden" });
+        return res.status(403).json({ msg: "Forbidden" })
     }
 
     const files = await File.findAll({
@@ -142,36 +139,38 @@ async function deleteFolder(req, res) {
         )
 
         await folder.destroy().then(() => {
-            return res.status(200).json({ msg: "Folder deleted successfully" });
+            return res.status(200).json({ msg: "Folder deleted successfully" })
         }).catch((err) => {
-            return res.status(500).json({ msg: "Failed to delete folder", err: err });
+            return res.status(500).json({ msg: "Failed to delete folder", err: err })
         })
     } catch (err) {
-        console.error("Delete error:", err);
+        console.error("Delete error:", err)
         return res.status(500).json({
             msg: "Failed to delete files",
             error: err.message
-        });
+        })
     }
 }
 
 async function moveFolder(req, res) {
-    const { to, folderId } = req.params
+    const { to, folderId } = req.body
 
     if (!folderId || !to) {
-        return res.status(400).json({ msg: "Missing folderId or destination folder" });
+        return res.status(400).json({ msg: "Missing folderId or destination folder" })
     }
-
 
     const folder = await Folder.findByPk(folderId)
 
     if (!folder) {
-        return res.status(404).json({ msg: "Folder not found" });
+        return res.status(404).json({ msg: "Folder not found" })
     }
 
     if (folder.ownerId !== req.user.id) {
-        return res.status(403).json({ msg: "Forbidden" });
+        return res.status(403).json({ msg: "Forbidden" })
     }
+
+    if(to === folder.parentFolderId)
+        return res.status(403).json({ msg: "Folder is already is in same directery"})
 
     folder.parentFolderId = to
     await folder.save()
@@ -180,20 +179,20 @@ async function moveFolder(req, res) {
 }
 
 async function copyFolder(req, res) {
-    const { to, folderId } = req.params
+    const { to, folderId } = req.body
 
     if (!folderId || !to) {
-        return res.status(400).json({ msg: "Missing folderId or destination" });
+        return res.status(400).json({ msg: "Missing folderId or destination" })
     }
 
     const folder = await Folder.findByPk(folderId)
 
     if (!folder) {
-        return res.status(404).json({ msg: "Folder not found" });
+        return res.status(404).json({ msg: "Folder not found" })
     }
 
     if (folder.ownerId !== req.user.id) {
-        return res.status(403).json({ msg: "Forbidden" });
+        return res.status(403).json({ msg: "Forbidden" })
     }
 
     await Folder.create({
@@ -201,7 +200,7 @@ async function copyFolder(req, res) {
         name: `${folder.name}-copy`,
         parentFolderId: to
     }).then(async (newFolder) => {
-        await copyFolderTree(folderId, newFolder._id, req.user.id);
+        await copyFolderTree(folderId, newFolder._id, req.user.id)
     }).then(() => res.status(200).json({
         msg: "Folder copy successful"
     })).catch((err) => res.status(500).json({
@@ -210,10 +209,41 @@ async function copyFolder(req, res) {
     }))
 }
 
+async function renameFolder(res, req) {
+    try {
+        const { folderId,  foldername} = req.body
+
+        if (!folderId || !foldername) return res.status(401).json({ msg: "Folder id is required" })
+
+        const folder = await File.findByPk(folderId)
+
+        if (!folder) {
+            return res.status(404).json({ error: "File not found" })
+        }
+
+        if (folder.ownerId !== req.user.id) {
+            return res.status(403).json({ msg: "Forbidden" })
+        }
+
+        folder.originalFilename = foldername
+        await folder.save()
+        .then(() => { return res.status(200).json({ msg: "Renamed Successfully" }) })
+        .catch((err) => { return res.status(500).json({ msg: "Failed to move", err: err }) })
+
+    } catch (err) {
+        console.error("Delete error:", err)
+        return res.status(500).json({
+            msg: "Failed to delete files",
+            error: err.message
+        })
+    }
+}
+
 module.exports = {
     createRootDir,
     createFolder,
     deleteFolder,
     moveFolder,
     copyFolder,
+    renameFolder
 }

@@ -29,18 +29,20 @@ const Home = () => {
         fetchData()
     }, [])
 
-    const refreshFiles = async (currentFolderID) => {
-        // console.log(currentFolderID, parentFolderId)
-        if (!parentFolderId) return
-        const id = currentFolderID ?? parentFolderId
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${id}`, { withCredentials: true })
-        console.log(parentFolderId, res.data?.currentFolder)
+    const refreshFiles = async (folderId) => {
+        const id = folderId ?? "root"
+
+        const res = await axios.get(
+            `${import.meta.env.VITE_BACKEND}/file/list?id=${id}`,
+            { withCredentials: true }
+        )
+
         setItems(res.data?.combinedData)
         setParentFolderId(res.data?.currentFolder?.parentFolderId)
         setCurrentFolderId(res.data?.currentFolder?.id)
     }
 
-    useEffect(() => {console.log(currentFolderID, parentFolderId)}, [currentFolderID, parentFolderId])
+    useEffect(() => { console.log(currentFolderID, parentFolderId) }, [currentFolderID, parentFolderId])
 
     const handleFileUpload = async (event) => {
         const file = event.target.files[0]
@@ -55,7 +57,7 @@ const Home = () => {
                 onUploadProgress: (p) => setUploadProgress(Math.round((p.loaded * 100) / p.total)),
                 withCredentials: true
             })
-            alert("File uploaded successfully!")
+            // alert("File uploaded successfully!")
         } catch (error) {
             alert("Upload failed.")
         } finally {
@@ -79,8 +81,8 @@ const Home = () => {
                 },
                 {withCredentials: true}
             )
-
-            alert("Folder created succesfully!")
+            refreshFiles(currentFolderID)
+            // alert("Folder created succesfully!")
         }
         catch(err) {
             console.log(err)
@@ -91,6 +93,8 @@ const Home = () => {
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
             <Sidebar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+
+            
 
             <main className="main-content flex-row">
                 <div className="main-content-wrapper flex-grow">
@@ -130,7 +134,7 @@ const Home = () => {
                     </section>
                 </div>
 
-                <DetailsPanel item={selectedItem} />
+                <DetailsPanel item={selectedItem} onSelect={setSelectedItem}/>
             </main>
         </div>
     )

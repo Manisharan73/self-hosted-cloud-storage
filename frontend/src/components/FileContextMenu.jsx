@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react"
 import "../styles/FileContextMenu.css"
+import axios from 'axios'
 
-const FileContextMenu = ({ x, y, closeContextMenu, onSelect, refreshFiles, selectedItem, currentFolderID }) => {
+const FileContextMenu = ({ x, y, closeContextMenu, setPopUp, onSelect, refreshFiles, selectedItem, currentFolderID }) => {
     const contextRef = useRef(null)
 
     useEffect(() => {
@@ -16,6 +17,7 @@ const FileContextMenu = ({ x, y, closeContextMenu, onSelect, refreshFiles, selec
     }, [closeContextMenu])
 
     const downloadHandler = () => {
+        closeContextMenu()
         const url = `${import.meta.env.VITE_BACKEND}/file/download/${selectedItem.id}`
 
         const link = document.createElement("a")
@@ -27,24 +29,24 @@ const FileContextMenu = ({ x, y, closeContextMenu, onSelect, refreshFiles, selec
 
     const handleDelete = async () => {
         closeContextMenu()
+        
         const baseUrl = import.meta.env.VITE_BACKEND
         const action = selectedItem.type === "Folder" ? "folder/delete" : "file/delete"
         await axios.get(`${baseUrl}/${action}/${selectedItem.id}`, { withCredentials: true })
+        // console.log(action)
         refreshFiles(currentFolderID)
     }
 
     const handleCopy = async () => {
         closeContextMenu()
-        const baseUrl = import.meta.env.VITE_BACKEND
-        const action = selectedItem.type === "Folder" ? "folder/copy" : "file/copy"
-        await axios.get(`${baseUrl}/${action}/${selectedItem.id}`, { withCredentials: true })
-        refreshFiles(currentFolderID)
+        localStorage.setItem("clipboard", JSON.stringify({type: "copy", item: selectedItem}))
+        window.dispatchEvent(new Event("clipboardUpdate"))
     }
 
-    const handleMove = async () => {
+    const handleCut = async () => {
         closeContextMenu()
-        const baseUrl = import.meta.env.VITE_BACKEND
-        const action = selectedItem.type === "Folder" ? "folder/move" : "file/move"
+        localStorage.setItem("clipboard", JSON.stringify({type: "cut", item: selectedItem}))
+        window.dispatchEvent(new Event("clipboardUpdate"))
     }
 
     const handleDetails = () => {
@@ -54,8 +56,7 @@ const FileContextMenu = ({ x, y, closeContextMenu, onSelect, refreshFiles, selec
 
     const handleRename = async () => {
         closeContextMenu()
-        const baseUrl = import.meta.env.VITE_BACKEND
-        const action = selectedItem.type === "Folder" ? "folder/rename" : "file/rename"
+        setPopUp("rename")
     }
 
     return <>
@@ -64,7 +65,7 @@ const FileContextMenu = ({ x, y, closeContextMenu, onSelect, refreshFiles, selec
             <button onClick={() => handleRename()}>Rename</button>
             <button onClick={() => handleDetails()}>Details</button>
             <button onClick={() => handleCopy()}>Copy</button>
-            <button onClick={() => handleMove()}>Move</button>
+            <button onClick={() => handleCut()}>Cut</button>
             <button className="delete-opt" onClick={() => handleDelete()}>Delete</button>
         </div>
     </>

@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../sequelize');
+const { DataTypes } = require('sequelize')
+const sequelize = require('../sequelize')
 
 const User = sequelize.define(
     'User',
@@ -49,6 +49,6 @@ const User = sequelize.define(
             { unique: true, fields: ['email'] }
         ]
     }
-);
+)
 
-module.exports = User;
+module.exports = User

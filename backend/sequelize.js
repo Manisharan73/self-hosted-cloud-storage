@@ -1,4 +1,4 @@
-const { Sequelize } = require('sequelize');
+const { Sequelize } = require('sequelize')
 
 const sequelize = new Sequelize(
     process.env.DB_NAME,
@@ -13,6 +13,6 @@ const sequelize = new Sequelize(
             connectTimeout: 10000
         }
     }
-);
+)
 
-module.exports = sequelize;
+module.exports = sequelize

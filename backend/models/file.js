@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../sequelize');
+const { DataTypes } = require('sequelize')
+const sequelize = require('../sequelize')
 
 const File = sequelize.define(
     'File',
@@ -41,6 +41,6 @@ const File = sequelize.define(
         tableName: 'files',
         timestamps: true
     }
-);
+)
 
-module.exports = File;
+module.exports = File

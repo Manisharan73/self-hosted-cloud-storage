@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../sequelize');
+const { DataTypes } = require('sequelize')
+const sequelize = require('../sequelize')
 
 const UserVerify = sequelize.define(
     'UserVerify',
@@ -33,6 +33,6 @@ const UserVerify = sequelize.define(
         }
     },
     { tableName: 'user_verifies', timestamps: true }
-);
+)
 
-module.exports = UserVerify;
+module.exports = UserVerify

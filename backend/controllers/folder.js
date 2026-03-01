@@ -1,6 +1,8 @@
 const axios = require("axios")
 const Folder = require("../models/folder")
 const File = require("../models/file")
+const { Op } = require("sequelize")
+
 
 async function createRootDir(userId) {
     await Folder.create({
@@ -15,44 +17,48 @@ async function createRootDir(userId) {
 }
 
 async function copyFolderTree(sourceFolderId, targetParentId, userId) {
-    const queue = [{ sourceId: sourceFolderId, targetParentId }]
+    try {
+        const queue = [{ sourceId: sourceFolderId, targetParentId }]
 
-    while (queue.length > 0) {
-        const { sourceId, targetParentId } = queue.shift()
+        while (queue.length > 0) {
+            const { sourceId, targetParentId } = queue.shift()
 
-        const folder = await Folder.findById(sourceId)
+            const folder = await Folder.findByPk(sourceId)
 
-        const newFolder = await Folder.create({
-            ownerId: userId,
-            name: folder.name,
-            parentFolderId: targetParentId
-        })
+            // const newFolder = await Folder.create({
+            //     ownerId: userId,
+            //     name: folder.name,
+            //     parentFolderId: targetParentId
+            // })
 
-        const files = await File.find({ parentFolderId: sourceId })
+            const files = await File.findAll({ parentFolderId: sourceId })
 
-        if (files.length > 0) {
-            const newFiles = files.map(f => ({
-                ownerId: userId,
-                originalFilename: f.originalFilename,
-                filename: f.filename,
-                size: f.size,
-                mimetype: f.mimetype,
-                path: f.path,
-                actualPath: f.actualPath,
-                parentFolderId: newFolder._id
-            }))
+            if (files.length > 0) {
+                const newFiles = files.map(f => ({
+                    ownerId: userId,
+                    originalFilename: f.originalFilename,
+                    filename: f.filename,
+                    size: f.size,
+                    mimetype: f.mimetype,
+                    path: f.path,
+                    actualPath: f.actualPath,
+                    parentFolderId: newFolder._id
+                }))
 
-            await File.insertMany(newFiles) 
+                await File.insertMany(newFiles)
+            }
+
+            const subFolders = await Folder.findAll({ parentFolderId: sourceId })
+
+            for (const sub of subFolders) {
+                queue.push({
+                    sourceId: sub._id,
+                    targetParentId: newFolder._id
+                })
+            }
         }
-
-        const subFolders = await Folder.find({ parentFolderId: sourceId })
-
-        for (const sub of subFolders) {
-            queue.push({
-                sourceId: sub._id,
-                targetParentId: newFolder._id
-            })
-        }
+    } catch (err) {
+        console.log(err)
     }
 }
 
@@ -144,7 +150,7 @@ async function deleteFolder(req, res) {
             return res.status(500).json({ msg: "Failed to delete folder", err: err })
         })
     } catch (err) {
-        console.error("Delete error:", err)
+        console.error("Delete error:", err.message)
         return res.status(500).json({
             msg: "Failed to delete files",
             error: err.message
@@ -153,7 +159,7 @@ async function deleteFolder(req, res) {
 }
 
 async function moveFolder(req, res) {
-    const { to, folderId } = req.body
+    const { to, id: folderId } = req.body
 
     if (!folderId || !to) {
         return res.status(400).json({ msg: "Missing folderId or destination folder" })
@@ -169,8 +175,8 @@ async function moveFolder(req, res) {
         return res.status(403).json({ msg: "Forbidden" })
     }
 
-    if(to === folder.parentFolderId)
-        return res.status(403).json({ msg: "Folder is already is in same directery"})
+    if (to === folder.parentFolderId)
+        return res.status(403).json({ msg: "Folder is already is in same directery" })
 
     folder.parentFolderId = to
     await folder.save()
@@ -179,7 +185,7 @@ async function moveFolder(req, res) {
 }
 
 async function copyFolder(req, res) {
-    const { to, folderId } = req.body
+    const { to, id: folderId } = req.body
 
     if (!folderId || !to) {
         return res.status(400).json({ msg: "Missing folderId or destination" })
@@ -195,23 +201,27 @@ async function copyFolder(req, res) {
         return res.status(403).json({ msg: "Forbidden" })
     }
 
-    await Folder.create({
+    const NewFolder = await Folder.create({
         ownerId: folder.ownerId,
         name: `${folder.name}-copy`,
         parentFolderId: to
     }).then(async (newFolder) => {
-        await copyFolderTree(folderId, newFolder._id, req.user.id)
+        // console.log(newFolder)
+        await copyFolderTree(folderId, newFolder.id, req.user.id)
     }).then(() => res.status(200).json({
         msg: "Folder copy successful"
-    })).catch((err) => res.status(500).json({
-        msg: "Failed to copy",
-        err: err
-    }))
+    })).catch(async (err) => {
+        await NewFolder.destroy()
+        res.status(500).json({
+            msg: "Failed to copy",
+            err: err
+        })
+    })
 }
 
-async function renameFolder(res, req) {
+async function renameFolder(req, res) {
     try {
-        const { folderId,  foldername} = req.body
+        const { id: folderId, name: foldername } = req.body
 
         if (!folderId || !foldername) return res.status(401).json({ msg: "Folder id is required" })
 
@@ -227,8 +237,8 @@ async function renameFolder(res, req) {
 
         folder.originalFilename = foldername
         await folder.save()
-        .then(() => { return res.status(200).json({ msg: "Renamed Successfully" }) })
-        .catch((err) => { return res.status(500).json({ msg: "Failed to move", err: err }) })
+            .then(() => { return res.status(200).json({ msg: "Renamed Successfully" }) })
+            .catch((err) => { return res.status(500).json({ msg: "Failed to move", err: err }) })
 
     } catch (err) {
         console.error("Delete error:", err)

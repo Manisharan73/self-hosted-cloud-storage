@@ -8,4 +8,4 @@ router.post("/signup", userSignup)
 router.post("/login", userLogin)
 router.get("/verify/:userId/:uniqueString", userVerify)
 
-module.exports = router;
+module.exports = router

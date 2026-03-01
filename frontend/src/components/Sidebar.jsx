@@ -1,13 +1,13 @@
 import '../styles/Sidebar.css'
-import { useNavigate } from 'react-router-dom';
-import { FaHome, FaBell } from "react-icons/fa";
-import { IoMdPhotos, IoIosDocument } from "react-icons/io";
-import { BiSolidVideos } from "react-icons/bi";
-import { MdAudiotrack } from "react-icons/md";
-import { IoPerson } from "react-icons/io5";
-import { FaTrashCan } from "react-icons/fa6";
-import { LuLogOut } from "react-icons/lu";
-import { MdDarkMode, MdLightMode } from "react-icons/md";
+import { useNavigate } from 'react-router-dom'
+import { FaHome, FaBell } from "react-icons/fa"
+import { IoMdPhotos, IoIosDocument } from "react-icons/io"
+import { BiSolidVideos } from "react-icons/bi"
+import { MdAudiotrack } from "react-icons/md"
+import { IoPerson } from "react-icons/io5"
+import { FaTrashCan } from "react-icons/fa6"
+import { LuLogOut } from "react-icons/lu"
+import { MdDarkMode, MdLightMode } from "react-icons/md"
 
 const Sidebar = ({ isDarkMode, toggleTheme }) => {
     const navigate = useNavigate()

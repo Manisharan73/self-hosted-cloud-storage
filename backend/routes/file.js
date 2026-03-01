@@ -10,8 +10,8 @@ router.get("/list", listFiles)
 router.get("/download/:id", downloadFile)
 router.get("/delete/:id", deleteFile)
 router.post("/delete", deleteMultipleFiles)
-router.get("/copy", copyFile)
-router.get("/move", moveFile)
+router.post("/copy", copyFile)
+router.post("/move", moveFile)
 router.post("/rename", renameFile)
 
 module.exports = router

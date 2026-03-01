@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../sequelize');
+const { DataTypes } = require('sequelize')
+const sequelize = require('../sequelize')
 
 const SharedItem = sequelize.define(
     'SharedItem',
@@ -70,6 +70,6 @@ const SharedItem = sequelize.define(
             }
         ]
     }
-);
+)
 
-module.exports = SharedItem;
+module.exports = SharedItem

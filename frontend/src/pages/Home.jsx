@@ -6,6 +6,13 @@ import Sidebar from '../components/Sidebar'
 import axios from 'axios'
 import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
+import { MdContentPaste } from "react-icons/md"
+import { IoClose } from "react-icons/io5"
+
+const initClipboard = JSON.stringify({
+    type: null,
+    item: null
+})
 
 const Home = () => {
     const [isDarkMode, setIsDarkMode] = useState(true)
@@ -17,11 +24,36 @@ const Home = () => {
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
     const [uploadProgress, setUploadProgress] = useState(0)
     const [isUploading, setIsUploading] = useState(false)
+    const [popUp, setPopUp] = useState(null)
+    const [clipboard, setClipboard] = useState(() => {
+        const saved = localStorage.getItem("clipboard")
+        try {
+            return saved ? JSON.parse(saved) : { item: null, type: null }
+        } catch {
+            return { item: null, type: null }
+        }
+    })
+
+    useEffect(() => {
+        const syncClipboard = () => {
+            const saved = localStorage.getItem("clipboard")
+            setClipboard(saved ? JSON.parse(saved) : { item: null, type: null })
+        }
+
+        window.addEventListener("clipboardUpdate", syncClipboard)
+
+        window.addEventListener("storage", syncClipboard)
+
+        return () => {
+            window.removeEventListener("clipboardUpdate", syncClipboard)
+            window.removeEventListener("storage", syncClipboard)
+        }
+    }, [])
 
     useEffect(() => {
         const fetchData = async () => {
-            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list`, { withCredentials: true })
-            console.log(res.data?.currentFolder)
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=root`, { withCredentials: true })
+            // console.log(res.data)
             setItems(res.data?.combinedData)
             setParentFolderId(res.data?.currentFolder?.parentFolderId)
             setCurrentFolderId(res.data?.currentFolder?.id)
@@ -41,8 +73,6 @@ const Home = () => {
         setParentFolderId(res.data?.currentFolder?.parentFolderId)
         setCurrentFolderId(res.data?.currentFolder?.id)
     }
-
-    useEffect(() => { console.log(currentFolderID, parentFolderId) }, [currentFolderID, parentFolderId])
 
     const handleFileUpload = async (event) => {
         const file = event.target.files[0]
@@ -66,35 +96,38 @@ const Home = () => {
         }
     }
 
-    const handleCreateFolder = async () => {
-        const name = prompt("Enter folder name")
+    const handlePaste = async () => {
+        if (!clipboard.item) return
 
-        if(!name) {
-            return
-        }
-        
         try {
-            await axios.post(`${import.meta.env.VITE_BACKEND}/folder/create`,
-                {
-                    name,
-                    parentFolderId: currentFolderID
-                },
-                {withCredentials: true}
-            )
+            const type = clipboard.item.type === "Folder" ? "/folder" : "/file"
+            const endpoint = clipboard.type === 'cut' ? '/move' : '/copy'
+            await axios.post(`${import.meta.env.VITE_BACKEND}${type}${endpoint}`, {
+                id: clipboard.item.id,
+                to: currentFolderID
+            }, { withCredentials: true })
+
+            if (clipboard.type === 'cut') {setClipboard({ item: null, type: null })
+                localStorage.setItem("clipboard", JSON.stringify({ item: null, type: null }))
+            }
+
             refreshFiles(currentFolderID)
-            // alert("Folder created succesfully!")
+        } catch (err) {
+            alert("Paste failed")
         }
-        catch(err) {
-            console.log(err)
-            alert("Failed to create folder")
-        }
+    }
+
+    const clearClipboard = (e) => {
+        e.stopPropagation()
+        setClipboard({ item: null, type: null })
+        localStorage.setItem("clipboard", JSON.stringify({ item: null, type: null }))
     }
 
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
             <Sidebar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
-            
+
 
             <main className="main-content flex-row">
                 <div className="main-content-wrapper flex-grow">
@@ -110,15 +143,29 @@ const Home = () => {
                                 <MdOutlineFileUpload /> <span>{isUploading ? `Uploading ${uploadProgress}%` : "Upload file"}</span>
                             </button>
 
-                            <button className='upload-btn' onClick={handleCreateFolder}><MdOutlineFolder />Create Folder</button>
+                            <button className='upload-btn' onClick={() => setPopUp("folder")}><MdOutlineFolder />Create Folder</button>
+
                         </div>
                     </header>
 
                     <section className="section-container">
                         <div className="section-header">
                             <h2 className='text-xl font-bold'>My Storage</h2>
+                            <div className={`paste-container ${clipboard.item ? 'visible' : 'hidden'}`}>
+                                <button className="paste-btn" onClick={handlePaste}>
+                                    <MdContentPaste className="paste-icon" />
+                                    <span>Paste {clipboard.type === 'move' ? 'here' : 'copy'}</span>
+                                    <small className="clipboard-label">{clipboard?.item?.name}</small>
+
+                                    <IoClose
+                                        className="clear-clipboard"
+                                        onClick={clearClipboard}
+                                    />
+                                </button>
+                            </div>
                             <button onClick={() => refreshFiles(parentFolderId)} className="back-btn text-blue-500">← Back</button>
                         </div>
+
 
                         <FileTable
                             data={items}
@@ -130,11 +177,13 @@ const Home = () => {
                             setCurrentFolderId={setCurrentFolderId}
                             refreshFiles={refreshFiles}
                             currentFolderID={currentFolderID}
+                            popUp={popUp}
+                            setPopUp={setPopUp}
                         />
                     </section>
                 </div>
 
-                <DetailsPanel item={selectedItem} onSelect={setSelectedItem}/>
+                <DetailsPanel item={selectedItem} onSelect={setSelectedItem} />
             </main>
         </div>
     )

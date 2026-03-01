@@ -23,7 +23,7 @@ async function jwtAuth(req, res, next) {
             return res.status(403).send("Invalid or expired token")
         }
 
-        console.log("User middleware triggered");
+        console.log("User middleware triggered")
 
         const user = await User.findByPk(payload.id)
 

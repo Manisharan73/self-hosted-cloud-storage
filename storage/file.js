@@ -7,12 +7,12 @@ const router = express.Router()
 router.get("/download/:filename", (req, res) => {
     const uniqueName = req.query.uniqueName
     console.log(uniqueName)
-    const filePath = path.join(__dirname, "uploads", uniqueName, req.params.filename);
+    const filePath = path.join(__dirname, "uploads", uniqueName, req.params.filename)
     if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ status: false, error: "File not found" });
+        return res.status(404).json({ status: false, error: "File not found" })
     }
-    res.download(filePath);
-});
+    res.download(filePath)
+})
 
 router.post("/delete", async (req, res) => {
     const { filenames, user } = req.body
@@ -22,34 +22,34 @@ router.post("/delete", async (req, res) => {
     }
 
     if (!Array.isArray(filenames) || filenames.length === 0) {
-        return res.status(400).json({ status: false, msg: "filenames must be an array" });
+        return res.status(400).json({ status: false, msg: "filenames must be an array" })
     }
 
-    const baseDir = path.join(__dirname, "uploads", user.uniqueName);
+    const baseDir = path.join(__dirname, "uploads", user.uniqueName)
 
     if (!fs.existsSync(baseDir)) {
-        return res.status(404).json({ status: false, msg: "User folder not found" });
+        return res.status(404).json({ status: false, msg: "User folder not found" })
     }
 
-    const errors = [];
+    const errors = []
 
     for (const filename of filenames) {
         if (filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
-            errors.push({ filename, error: "Invalid filename" });
-            continue;
+            errors.push({ filename, error: "Invalid filename" })
+            continue
         }
 
-        const filePath = path.join(baseDir, filename);
+        const filePath = path.join(baseDir, filename)
 
         if (!fs.existsSync(filePath)) {
-            errors.push({ filename, error: "File not found" });
-            continue;
+            errors.push({ filename, error: "File not found" })
+            continue
         }
 
         try {
-            await fs.promises.unlink(filePath);
+            await fs.promises.unlink(filePath)
         } catch (err) {
-            errors.push({ filename, error: err.message });
+            errors.push({ filename, error: err.message })
         }
     }
 
@@ -58,7 +58,7 @@ router.post("/delete", async (req, res) => {
             status: false,
             msg: "Some files failed to delete",
             errors
-        });
+        })
     }
 
 
@@ -77,7 +77,7 @@ router.delete("/delete/:filename", (req, res) => {
     }
 
     fs.unlink(filePath, err => {
-        if (err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err)
         res.json({ status: true, msg: "File deleted" })
     })
 })
@@ -96,7 +96,7 @@ router.post("/copy/:filename", (req, res) => {
 
     fs.copyFile(filePath, path.join(dir, desFilename), fs.constants.COPYFILE_EXCL, (err) => {
         if (err) {
-            console.log('Destination file already exists!');
+            console.log('Destination file already exists!')
         }
     })
 

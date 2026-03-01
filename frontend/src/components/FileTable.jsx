@@ -4,6 +4,7 @@ import fileIcon from "../assets/default.svg"
 import folderIcon from "../assets/folder-blue.svg"
 import { useState, useEffect } from "react"
 import FileContextMenu from "./FileContextMenu"
+import PopUpCMR from "./PopUpCMR"
 
 const initailContextMenu = {
     show: false,
@@ -11,7 +12,7 @@ const initailContextMenu = {
     y: 0
 }
 
-const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, setCurrentFolderId, refreshFiles, currentFolderID }) => {
+const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, setCurrentFolderId, refreshFiles, currentFolderID, popUp, setPopUp }) => {
     const [contextMenu, setContextMenu] = useState(initailContextMenu)
     const [selectedItem, setSelectedItem] = useState(null)
     const [previewUrl, setPreviewUrl] = useState(null)
@@ -78,14 +79,16 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
     const handleContextMenu = (e, item) => {
         e.preventDefault()
 
-        const { pageX, pageY } = e
+        const { clientX, clientY } = e
         setContextMenu({
             show: true,
-            x: pageX,
-            y: pageY
+            x: Math.min(clientX, window.innerWidth - 300),
+            y: Math.min(clientY, window.innerHeight - 350)
         })
         setSelectedItem(item)
     }
+
+
 
     const closeContextMenu = () => { setContextMenu(initailContextMenu) }
 
@@ -131,6 +134,14 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
             closeContextMenu={closeContextMenu}
             currentFolderID={currentFolderID}
             onSelect={onSelect}
+            setPopUp={setPopUp}
+        />}
+        {popUp && <PopUpCMR
+            popUp={popUp}
+            setPopUp={setPopUp}
+            selectedItem={selectedItem}
+            currentFolderID={currentFolderID}
+            refreshFiles={refreshFiles}
         />}
     </>
     )

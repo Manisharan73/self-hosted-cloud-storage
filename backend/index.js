@@ -1,6 +1,6 @@
 const express = require("express")
 require('dotenv').config()
-const cors = require('cors');
+const cors = require('cors')
 const cookieParser = require('cookie-parser')
 
 const { logHandler } = require("./middlewares/log")
@@ -18,20 +18,20 @@ app.use(express.json())
 app.use(logHandler(process.env.LOGS_FILENAME))
 app.use(cookieParser())
 
-const sequelize = require('./sequelize');
+const sequelize = require('./sequelize')
 
 app.use(cors({
     origin: ['http://localhost:5173', 'http://100.116.29.119:5173' ],
     credentials: true
-}));
+}))
 
 async function initDb() {
     try {
-        await sequelize.authenticate();
-        console.log('Sequelize connected');
-        await sequelize.sync();
+        await sequelize.authenticate()
+        console.log('Sequelize connected')
+        await sequelize.sync()
     } catch (err) {
-        console.error('DB connection failed:', err);
+        console.error('DB connection failed:', err)
     }
 }
 

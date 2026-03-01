@@ -22,21 +22,21 @@ const Login_SignUp = () => {
     })
 
     const handleLoginChange = (e) => {
-        const { name, value } = e.target;
-        setLoginFields(prev => ({ ...prev, [name]: value }));
+        const { name, value } = e.target
+        setLoginFields(prev => ({ ...prev, [name]: value }))
     }
 
     const handleSignupChange = (e) => {
-        const { name, value } = e.target;
-        setSignupFields(prev => ({ ...prev, [name]: value }));
+        const { name, value } = e.target
+        setSignupFields(prev => ({ ...prev, [name]: value }))
     }
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
+        e.preventDefault()
+        setLoading(true)
 
-        const baseUrl = import.meta.env.VITE_BACKEND;
-        const endpoint = isLogin ? '/auth/login' : '/auth/signup';
+        const baseUrl = import.meta.env.VITE_BACKEND
+        const endpoint = isLogin ? '/auth/login' : '/auth/signup'
 
         const payload = isLogin
             ? { check: loginFields.check, password: loginFields.password }
@@ -45,7 +45,7 @@ const Login_SignUp = () => {
                 username: signupFields.userName,
                 email: signupFields.email,
                 password: signupFields.password
-            };
+            }
 
         try {
             const response = await axios.post(`${baseUrl}${endpoint}`, payload, {
@@ -56,18 +56,18 @@ const Login_SignUp = () => {
                 if (isLogin) {
                     localStorage.setItem('token', response.data.accessToken)
 
-                    navigate('/', { replace: true });
+                    navigate('/', { replace: true })
                 } else {
-                    alert("Registration successful! Please check your email to verify your account.");
+                    // alert("Registration successful! Please check your email to verify your account.")
 
-                    setIsLogin(true);
+                    setIsLogin(true)
                 }
             }
         } catch (error) {
-            const errorMsg = error.response?.data?.msg || error.response?.data || "Server error";
-            alert(errorMsg);
+            const errorMsg = error.response?.data?.msg || error.response?.data || "Server error"
+            alert(errorMsg)
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     }
 
@@ -166,7 +166,7 @@ const Login_SignUp = () => {
                 </div>
             </div>
         </div>
-    );
+    )
 }
 
-export default Login_SignUp;
+export default Login_SignUp

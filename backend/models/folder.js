@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../sequelize');
+const { DataTypes } = require('sequelize')
+const sequelize = require('../sequelize')
 
 const Folder = sequelize.define(
     'Folder',
@@ -41,6 +41,6 @@ const Folder = sequelize.define(
         tableName: 'folders',
         timestamps: true
     }
-);
+)
 
-module.exports = Folder;
+module.exports = Folder

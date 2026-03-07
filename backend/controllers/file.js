@@ -586,10 +586,14 @@ async function revokeShare(req, res) {
             return res.status(404).json({ msg: "Share record not found" })
         }
 
-        share.status = 'revoked'
-        await share.save()
-
-        res.json({ msg: "Access Revoked" })
+        if(!share.isSavedByRecipient) {
+            await share.destroy()
+            return res.json({ msg: "Invitation Revoked" })
+        } else {
+            share.status = 'revoked'
+            await share.save()
+            return res.json({ msg: "Access Revoked" })
+        }
     } catch(err) {
         res.status(500).json({ error: err.message })
     }
@@ -666,26 +670,45 @@ async function listSharedWithMe(req, res) {
 
 async function listPendingNotifications(req, res) {
     try {
-        const pendingShares = await SharedItem.findAll({
-            where: {
-                sharedWith: req.user.id,
-                status: 'active',
-                isSavedByRecipient: false
-            }
-        })
+        const [receivedShares, sentShares] = await Promise.all([
+            SharedItem.findAll({
+                where: {
+                    sharedWith: req.user.id,
+                    status: 'active',
+                    isSavedByRecipient: false
+                }
+            }),
 
-        const notifications = await Promise.all(pendingShares.map(async (share) => {
-            const Model = share.itemType === 'file' ? File : Folder
-            const item = await Model.findByPk(share.itemId)
+            SharedItem.findAll({
+                where: {
+                    ownerId: req.user.id,
+                    status: 'active',
+                    isSavedByRecipient: false
+                }
+            })
+        ])
 
-            return {
-                shareId: share.id,
-                message: `User ${share.ownerId} shared a ${share.itemType}: ${item ? (item.originalFilename || item.name) : 'Unknown'}`,
-                date: share.sharedAt
-            }
-        }))
+        const formatNotifications = async (shares, type) => {
+            return await Promise.all(shares.map(async (share) => {
+                const Model = share.itemType === 'file' ? File : Folder
+                const item = await Model.findByPk(share.itemId)
 
-        res.status(200).json({ notifications })
+                return {
+                    shareId: share.id,
+                    itemId: share.itemId,
+                    itemName: item ? (item.originalFilename || item.name) : 'Unknown',
+                    itemType: share.itemType,
+                    targetUser: type === 'received' ? share.ownerId : share.sharedWith,
+                    date: share.createdAt,
+                    type: type
+                }
+            }))
+        }
+
+        const received = await formatNotifications(receivedShares, 'received')
+        const sent = await formatNotifications(sentShares, 'sent')
+
+        res.status(200).json({ received, sent })
     } catch(err) {
         res.status(500).json({ error: err.message })
     }

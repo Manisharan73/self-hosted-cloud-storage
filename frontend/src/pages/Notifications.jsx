@@ -14,7 +14,7 @@ const Notifications = () => {
 
     const fetchData = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/notifications`, { withCredentials: true })
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/notifications`, { withCredentials: true })
             setNotifications(res.data)
         } catch (err) {
             console.error("Failed to fetch data", err);
@@ -32,9 +32,9 @@ const Notifications = () => {
     const handleAction = async (action, shareId) => {
         let endpoint = "";
 
-        if (action === 'accept') endpoint = `/file/share/save/${shareId}`;
-        if (action === 'decline') endpoint = `/file/share/decline/${shareId}`;
-        if (action === 'revoke') endpoint = `/file/share/revoke/${shareId}`;
+        if (action === 'accept') endpoint = `/user/share/save/${shareId}`;
+        if (action === 'decline') endpoint = `/user/share/decline/${shareId}`;
+        if (action === 'revoke') endpoint = `/user/share/revoke/${shareId}`;
 
         try {
             await axios.post(`${import.meta.env.VITE_BACKEND}${endpoint}`, {}, { withCredentials: true });
@@ -45,6 +45,7 @@ const Notifications = () => {
             }));
         } catch (err) {
             console.error("Action error:", err);
+            alert(err.response?.data?.msg || "Failed to process request");
         }
     };
 

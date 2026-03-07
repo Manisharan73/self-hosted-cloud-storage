@@ -31,7 +31,7 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
 
     const handleShare = async () => {
         try {
-            await axios.post(`${import.meta.env.VITE_BACKEND}/file/share`, {
+            await axios.post(`${import.meta.env.VITE_BACKEND}/user/share`, {
                 itemId: selectedItem.id,
                 itemType: selectedItem.type.toLowerCase(),
                 sharedWithUserId: recipientId,

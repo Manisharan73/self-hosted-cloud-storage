@@ -150,7 +150,7 @@ const Home = () => {
 
     const fetchSharedItems = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/shared-with-me`, { withCredentials: true })
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/shared-with-me`, { withCredentials: true })
             setItems(res.data?.combinedData)
             setView("shared")
             setSelectedItem(null)

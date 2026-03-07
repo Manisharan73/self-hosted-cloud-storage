@@ -9,6 +9,7 @@ const { jwtAuth } = require("./middlewares/auth")
 const fileRouter = require("./routes/file")
 const authRouter = require("./routes/auth")
 const folderRouter = require("./routes/folder")
+const userRouter = require("./routes/user")
 
 const app = express()
 const PORT = 3001
@@ -42,7 +43,7 @@ app.use("/test", jwtAuth, (req, res) => {
     console.log(req.user)
     res.send("Hello world")
 })
-
+app.use("/user", jwtAuth, userRouter)
 
 initDb().then(() => {
     app.listen(3001, () => {

@@ -3,8 +3,7 @@ const router = express.Router();
 const { 
     uploadFile, listFiles, downloadFile, deleteFile, 
     deleteMultipleFiles, copyFile, renameFile, moveFile, 
-    moveToTrash, restoreItem, listTrash,
-    sharedItem, revokeShare, saveSharedItem, listSharedWithMe, listPendingNotifications, declineShare
+    moveToTrash, restoreItem, listTrash
 } = require("../controllers/file");
 const upload = require("../middlewares/multer");
 
@@ -21,11 +20,5 @@ router.post("/rename", renameFile)
 router.get("/listTrash", listTrash)
 router.post("/trash/:id", moveToTrash)
 router.post("/restore/:id", restoreItem)
-router.post("/share", sharedItem)
-router.get("/shared-with-me", listSharedWithMe)
-router.get("/notifications", listPendingNotifications)
-router.post("/share/save/:shareId", saveSharedItem)
-router.post("/share/decline/:shareId", declineShare)
-router.post("/share/revoke/:shareId", revokeShare)
 
 module.exports = router;

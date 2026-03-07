@@ -4,7 +4,7 @@ import axios from "axios"
 import fileIcon from "../assets/default.svg"
 import { IoClose } from "react-icons/io5"
 
-const DetailsPanel = ({ item, onSelect, view }) => {
+const DetailsPanel = ({ item, onSelect, view}) => {
     if (!item) return <aside className="details-panel empty"></aside>
 
     const icon = (item) => {

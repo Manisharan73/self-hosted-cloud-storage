@@ -3,31 +3,22 @@ import "../styles/Notifications.css"
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { IoMailOpenOutline, IoSendOutline, IoCheckmark, IoClose, IoTrashOutline } from "react-icons/io5"
+// Import the hook from your context file
+import { useNotifications } from "../context/NotificationContext"
 
 const Notifications = () => {
     const [isDarkMode, setIsDarkMode] = useState(true)
     const [activeTab, setActiveTab] = useState('received')
-    const [notifications, setNotifications] = useState({ received: [], sent: [] })
-    const [loading, setLoading] = useState(true)
+    
+    // 1. Use the global state and functions from Context
+    const { notifications, setNotifications, loading, fetchData } = useNotifications()
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
-    const fetchData = async () => {
-        try {
-            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/notifications`, { withCredentials: true })
-            setNotifications(res.data)
-        } catch (err) {
-            console.error("Failed to fetch data", err);
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(
-        () => {
-            fetchData()
-        }, []
-    )
+    // 2. Fetch data on mount via the context function
+    useEffect(() => {
+        fetchData()
+    }, [])
 
     const handleAction = async (action, shareId) => {
         let endpoint = "";
@@ -39,6 +30,7 @@ const Notifications = () => {
         try {
             await axios.post(`${import.meta.env.VITE_BACKEND}${endpoint}`, {}, { withCredentials: true });
 
+            // 3. Update the GLOBAL state so Sidebar badge reflects changes immediately
             setNotifications(prev => ({
                 received: prev.received.filter(n => n.shareId !== shareId),
                 sent: prev.sent.filter(n => n.shareId !== shareId)
@@ -74,39 +66,47 @@ const Notifications = () => {
                 </div>
 
                 <div className="notif-list">
-                    {loading ? <p>Loading...</p> :
-                        notifications[activeTab].length === 0 ? <p className="empty-msg">No {activeTab} requests found.</p> :
-                            notifications[activeTab].map((n) => (
-                                <div key={n.shareId} className="notif-card">
-                                    <div className="notif-info">
-                                        <div className="notif-icon">
-                                            {activeTab === 'received' ? <IoMailOpenOutline /> : <IoSendOutline />}
-                                        </div>
-                                        <div className="notif-details">
-                                            <h3>{n.itemName}</h3>
-                                            <p>{activeTab === 'received' ? `From User: ${n.targetUser}` : `Sent to User: ${n.targetUser}`}</p>
-                                            <p className="notif-date">{new Date(n.date).toLocaleDateString()}</p>
-                                        </div>
+                    {loading ? (
+                        <p className="empty-msg">Loading notifications...</p>
+                    ) : notifications[activeTab].length === 0 ? (
+                        <p className="empty-msg">No {activeTab} requests found.</p>
+                    ) : (
+                        notifications[activeTab].map((n) => (
+                            <div key={n.shareId} className="notif-card">
+                                <div className="notif-info">
+                                    <div className="notif-icon">
+                                        {activeTab === 'received' ? <IoMailOpenOutline /> : <IoSendOutline />}
                                     </div>
-
-                                    <div className="notif-actions">
-                                        {activeTab === 'received' ? (
-                                            <>
-                                                <button className="btn-action btn-save" onClick={() => handleAction('accept', n.shareId)}>
-                                                    <IoCheckmark /> Accept
-                                                </button>
-                                                <button className="btn-action btn-decline" onClick={() => handleAction('decline', n.shareId)}>
-                                                    <IoClose /> Decline
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button className="btn-action btn-revoke" onClick={() => handleAction('revoke', n.shareId)}>
-                                                <IoTrashOutline /> Revoke Access
-                                            </button>
-                                        )}
+                                    <div className="notif-details">
+                                        <h3>{n.itemName}</h3>
+                                        <p>
+                                            {activeTab === 'received' 
+                                                ? `From: ${n.targetUser}` 
+                                                : `Sent to: ${n.targetUser}`}
+                                        </p>
+                                        <p className="notif-date">{new Date(n.date).toLocaleDateString()}</p>
                                     </div>
                                 </div>
-                            ))}
+
+                                <div className="notif-actions">
+                                    {activeTab === 'received' ? (
+                                        <>
+                                            <button className="btn-action btn-save" onClick={() => handleAction('accept', n.shareId)}>
+                                                <IoCheckmark /> Accept
+                                            </button>
+                                            <button className="btn-action btn-decline" onClick={() => handleAction('decline', n.shareId)}>
+                                                <IoClose /> Decline
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button className="btn-action btn-revoke" onClick={() => handleAction('revoke', n.shareId)}>
+                                            <IoTrashOutline /> Revoke Access
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </main>
         </div>

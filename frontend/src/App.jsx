@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login_SignUp from './pages/Login_SignUp'
 import Home from './pages/Home'
 import Notifications from './pages/Notifications'
+import Trash from './pages/Trash'
+import Shared from './pages/Shared'
+import { NotificationProvider } from './context/NotificationContext'
 
 function App() {
     const ProtectedRoute = ({ children }) => {
@@ -17,14 +20,18 @@ function App() {
 
     return (
         <>
-            <Router>
-                <Routes>
-                    <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                    <Route path='/login-signup' element={<Login_SignUp />} />
-                    <Route path='/notifications' element={<Notifications />} />
-                    <Route path='*' element={<Navigate to='/' replace />} />
-                </Routes>
-            </Router>
+            <NotificationProvider>
+                <Router>
+                    <Routes>
+                        <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                        <Route path='/login-signup' element={<Login_SignUp />} />
+                        <Route path='/notifications' element={<Notifications />} />
+                        <Route path='/trash' element={<Trash />} />
+                        <Route path='/shared' element={<Shared />} />
+                        <Route path='*' element={<Navigate to='/' replace />} />
+                    </Routes>
+                </Router>
+            </NotificationProvider>
         </>
     )
 }

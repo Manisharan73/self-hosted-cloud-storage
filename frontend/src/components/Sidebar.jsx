@@ -1,71 +1,56 @@
 import '../styles/Sidebar.css'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { FaHome, FaBell } from "react-icons/fa"
-import { IoMdPhotos, IoIosDocument } from "react-icons/io"
-import { BiSolidVideos } from "react-icons/bi"
-import { MdAudiotrack } from "react-icons/md"
 import { IoPerson } from "react-icons/io5"
 import { FaTrashCan } from "react-icons/fa6"
 import { LuLogOut } from "react-icons/lu"
 import { MdDarkMode, MdLightMode } from "react-icons/md"
+import { useNotifications } from '../context/NotificationContext'
 
-const Sidebar = ({ isDarkMode, toggleTheme, onViewHome, onViewTrash, onViewShared }) => {
+const Sidebar = ({ isDarkMode, toggleTheme }) => {
     const navigate = useNavigate()
+    const location = useLocation()
+
+    const isActive = (path) => location.pathname === path ? 'active' : ''
 
     const handleLogOut = () => {
         localStorage.removeItem('token')
         navigate('/login-signup', { replace: true })
     }
 
+    const { notifications } = useNotifications();
+    const receivedCount = notifications.received.length;
+
     return (<>
         <aside className="sidebar">
-            <div className="sidebar-top">
-                <div
-                    className="nav-item active"
-                    onClick={() => {
-                        navigate("/")
-                        onViewHome()
-                    }}
-                >
-                        <FaHome className="nav-icon" /> <span>Home</span>
-                </div>
-                <div className="nav-item" onClick={() => {navigate("/notifications")}}>
-                    <FaBell className="nav-icon" /> <span>Notifications</span>
-                </div>
+            <div
+                className={`nav-item ${isActive('/')}`}
+                onClick={() => {
+                    navigate("/")
+                }}
+            >
+                <FaHome className="nav-icon" /> <span>Home</span>
             </div>
-
-            <div className="sidebar-middle">
-                <h3 className="section-title">Categories</h3>
-                <div className="nav-item">
-                    <IoMdPhotos className="nav-icon" /> <span>Photos</span>
-                </div>
-                <div className="nav-item">
-                    <BiSolidVideos className="nav-icon" /> <span>Videos</span>
-                </div>
-                <div className="nav-item">
-                    <IoIosDocument className="nav-icon" /> <span>Documents</span>
-                </div>
-                <div className="nav-item">
-                    <MdAudiotrack className="nav-icon" /> <span>Audio</span>
-                </div>
-                <div 
-                    className="nav-item"
-                    onClick = {() => {
-                        navigate("/")
-                        onViewShared()
-                    }}
-                >
-                        <IoPerson className="nav-icon" /> <span>Shared with me</span>
-                </div>
-                <div
-                    className="nav-item"
-                    onClick={() => {
-                        navigate("/")
-                        onViewTrash()
-                    }}
-                >
-                        <FaTrashCan className="nav-icon" /> <span>Trash</span>
-                </div>
+            <div className="nav-item" onClick={() => navigate("/notifications")}>
+                <FaBell className="nav-icon" /> 
+                <span>Notifications</span>
+                {receivedCount > 0 && <span className="notif-badge">{receivedCount}</span>}
+            </div>
+            <div
+                className={`nav-item ${isActive('/shared')}`}
+                onClick={() => {
+                    navigate("/shared")
+                }}
+            >
+                <IoPerson className="nav-icon" /> <span>Shared with me</span>
+            </div>
+            <div
+                className={`nav-item ${isActive('/trash')}`}
+                onClick={() => {
+                    navigate("/trash")
+                }}
+            >
+                <FaTrashCan className="nav-icon" /> <span>Trash</span>
             </div>
 
             <div className="sidebar-bottom">

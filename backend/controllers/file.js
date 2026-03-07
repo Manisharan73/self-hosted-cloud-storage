@@ -474,39 +474,6 @@ async function moveToTrash(req, res) {
     }
 }
 
-async function listTrash(req, res) {
-    try {
-        const [files ,folders] = await Promise.all([
-            File.findAll({ where: { ownerId: req.user.id, isTrashed: true } }),
-            Folder.findAll({ where: { ownerId: req.user.id, isTrashed: true } })
-        ])
-
-        const combinedData = [
-            ...folders.map(f => ({
-                id: f.id,
-                name: f.name,
-                type: 'Folder',
-                size: '---',
-                date: f.deletedAt
-            })),
-            ...files.map(f => ({
-                id: f.id,
-                name: f.originalFilename,
-                type: 'File',
-                size: f.size,
-                date: f.deletedAt
-            }))
-        ]
-
-        res.status(200).json({
-            combinedData,
-            msg: "Trash loaded successfully"
-        })
-    } catch(err) {
-        res.status(500).json({ error: "Failed to fetch trash items" })
-    }
-}
-
 async function restoreItem(req, res) {
     const file = await File.findByPk(req.params.id)
 
@@ -528,6 +495,5 @@ module.exports = {
     deleteMultipleFiles,
     renameFile,
     moveToTrash,
-    restoreItem,
-    listTrash
+    restoreItem
 }

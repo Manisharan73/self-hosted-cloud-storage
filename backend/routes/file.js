@@ -3,7 +3,7 @@ const router = express.Router();
 const { 
     uploadFile, listFiles, downloadFile, deleteFile, 
     deleteMultipleFiles, copyFile, renameFile, moveFile, 
-    moveToTrash, restoreItem, listTrash
+    moveToTrash, restoreItem
 } = require("../controllers/file");
 const upload = require("../middlewares/multer");
 
@@ -17,7 +17,6 @@ router.post("/delete-multiple", deleteMultipleFiles);
 router.post("/copy", copyFile);
 router.post("/move", moveFile);
 router.post("/rename", renameFile)
-router.get("/listTrash", listTrash)
 router.post("/trash/:id", moveToTrash)
 router.post("/restore/:id", restoreItem)
 

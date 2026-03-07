@@ -52,6 +52,21 @@ const SharedItem = sequelize.define(
             type: DataTypes.DATE,
             allowNull: false,
             defaultValue: DataTypes.NOW
+        },
+
+        status: {
+            type: DataTypes.ENUM('active', 'revoked'),
+            defaultValue: 'active'
+        },
+
+        isSavedByRecipient: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+
+        expiresAt: {
+            type: DataTypes.DATE,
+            allowNull: true
         }
     },
     {

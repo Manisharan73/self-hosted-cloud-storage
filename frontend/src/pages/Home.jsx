@@ -20,6 +20,7 @@ const Home = () => {
     const [parentFolderId, setParentFolderId] = useState(null)
     const [currentFolderID, setCurrentFolderId] = useState(null)
     const [selectedItem, setSelectedItem] = useState(null)
+    const [view, setView] = useState("storage")
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
     const [uploadProgress, setUploadProgress] = useState(0)
@@ -62,6 +63,16 @@ const Home = () => {
     }, [])
 
     const refreshFiles = async (folderId) => {
+        if (view == "trash") {
+            fetchTrash()
+            return
+        }
+
+        if (view === "shared") {
+            fetchSharedItems()
+            return
+        }
+
         const id = folderId ?? "root"
 
         const res = await axios.get(
@@ -107,13 +118,15 @@ const Home = () => {
                 to: currentFolderID
             }, { withCredentials: true })
 
-            if (clipboard.type === 'cut') {setClipboard({ item: null, type: null })
+            if (clipboard.type === 'cut') {
+                setClipboard({ item: null, type: null })
                 localStorage.setItem("clipboard", JSON.stringify({ item: null, type: null }))
             }
 
             refreshFiles(currentFolderID)
         } catch (err) {
-            alert("Paste failed")
+            const errorMsg = err.response?.data?.error || "Storage service is unreachable."
+            alert(`Paste failed: ${errorMsg}`)
         }
     }
 
@@ -123,11 +136,51 @@ const Home = () => {
         localStorage.setItem("clipboard", JSON.stringify({ item: null, type: null }))
     }
 
+    const fetchTrash = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/listTrash`, { withCredentials: true })
+
+            setItems(res.data?.combinedData)
+            setView("trash")
+            setSelectedItem(null)
+        } catch (err) {
+            console.error("Failed to fetch trash", err)
+        }
+    }
+
+    const fetchSharedItems = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/shared-with-me`, { withCredentials: true })
+            setItems(res.data?.combinedData)
+            setView("shared")
+            setSelectedItem(null)
+        } catch(err) {
+            console.error("Failed to fetch shared items", err)
+        }
+    }
+
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
-            <Sidebar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+            <Sidebar
+                isDarkMode={isDarkMode}
+                toggleTheme={toggleTheme}
+                onViewTrash={fetchTrash}
+                onViewShared = {fetchSharedItems}
+                onViewHome={
+                    async () => {
+                        setView("storage")
 
+                        const res = await axios.get(
+                            `${import.meta.env.VITE_BACKEND}/file/list?id=${"root"}`,
+                            { withCredentials: true }
+                        )
 
+                        setItems(res.data?.combinedData)
+                        setParentFolderId(res.data?.currentFolder?.parentFolderId)
+                        setCurrentFolderId(res.data?.currentFolder?.id)
+                    }
+                }
+            />
 
             <main className="main-content flex-row">
                 <div className="main-content-wrapper flex-grow">
@@ -136,21 +189,32 @@ const Home = () => {
                             <FaSearch className="search-icon" />
                             <input type="text" placeholder="Search your files..." />
                         </div>
-                        <div className="header-actions">
-                            <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />
 
-                            <button className="upload-btn" onClick={() => document.getElementById('file-upload').click()} disabled={isUploading}>
-                                <MdOutlineFileUpload /> <span>{isUploading ? `Uploading ${uploadProgress}%` : "Upload file"}</span>
-                            </button>
+                        {view == "storage" && (
+                            <div className="header-actions">
+                                <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />
 
-                            <button className='upload-btn' onClick={() => setPopUp("folder")}><MdOutlineFolder />Create Folder</button>
+                                <button className="upload-btn" onClick={() => document.getElementById('file-upload').click()} disabled={isUploading}>
+                                    <MdOutlineFileUpload /> <span>{isUploading ? `Uploading ${uploadProgress}%` : "Upload file"}</span>
+                                </button>
 
-                        </div>
+                                <button className='upload-btn' onClick={() => setPopUp("folder")}><MdOutlineFolder />Create Folder</button>
+
+                            </div>
+                        )}
                     </header>
 
                     <section className="section-container">
                         <div className="section-header">
-                            <h2 className='text-xl font-bold'>My Storage</h2>
+                            <h2 className='text-xl font-bold'>
+                                {view === 'storage' ? (
+                                    <>My Storage</>
+                                ) : view === 'trash' ? (
+                                    <>Trash</>
+                                ) : (
+                                    <>Shared With Me</>
+                                )}
+                            </h2>
                             <div className={`paste-container ${clipboard.item ? 'visible' : 'hidden'}`}>
                                 <button className="paste-btn" onClick={handlePaste}>
                                     <MdContentPaste className="paste-icon" />
@@ -179,11 +243,12 @@ const Home = () => {
                             currentFolderID={currentFolderID}
                             popUp={popUp}
                             setPopUp={setPopUp}
+                            view={view} 
                         />
                     </section>
                 </div>
 
-                <DetailsPanel item={selectedItem} onSelect={setSelectedItem} />
+                <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view={view} />
             </main>
         </div>
     )

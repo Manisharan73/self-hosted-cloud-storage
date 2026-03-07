@@ -12,7 +12,7 @@ const initailContextMenu = {
     y: 0
 }
 
-const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, setCurrentFolderId, refreshFiles, currentFolderID, popUp, setPopUp }) => {
+const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, setCurrentFolderId, refreshFiles, currentFolderID, popUp, setPopUp, view }) => {
     const [contextMenu, setContextMenu] = useState(initailContextMenu)
     const [selectedItem, setSelectedItem] = useState(null)
     const [previewUrl, setPreviewUrl] = useState(null)
@@ -135,6 +135,7 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
             currentFolderID={currentFolderID}
             onSelect={onSelect}
             setPopUp={setPopUp}
+            currentView = {view}
         />}
         {popUp && <PopUpCMR
             popUp={popUp}

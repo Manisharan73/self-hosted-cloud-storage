@@ -2,6 +2,7 @@ import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login_SignUp from './pages/Login_SignUp'
 import Home from './pages/Home'
+import Notifications from './pages/Notifications'
 
 function App() {
     const ProtectedRoute = ({ children }) => {
@@ -20,6 +21,7 @@ function App() {
                 <Routes>
                     <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
                     <Route path='/login-signup' element={<Login_SignUp />} />
+                    <Route path='/notifications' element={<Notifications />} />
                     <Route path='*' element={<Navigate to='/' replace />} />
                 </Routes>
             </Router>

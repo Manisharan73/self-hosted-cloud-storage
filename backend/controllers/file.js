@@ -2,9 +2,8 @@ const axios = require("axios")
 const File = require("../models/file")
 const FormData = require("form-data")
 const Folder = require("../models/folder")
+const SharedItem = require("../models/sharedItem")
 const { Op } = require("sequelize")
-
-
 
 async function uploadFile(req, res) {
     try {
@@ -111,8 +110,8 @@ async function listFiles(req, res) {
             return res.status(401).json({ msg: "Unauthorized" })
 
         const [files, folders] = await Promise.all([
-            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID } }),
-            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID } })
+            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } }),
+            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } })
         ])
 
         const combinedData = [
@@ -184,35 +183,38 @@ async function downloadFile(req, res) {
 
 async function deleteFile(req, res) {
     try {
-        const fileId = req.params.id
+        const fileId = req.params.id;
+        if (!fileId) return res.status(400).json({ msg: "File id is required" });
 
-        if (!fileId) return res.status(401).json({ msg: "File id is required" })
-
-        const file = await File.findByPk(fileId)
+        const file = await File.findByPk(fileId);
 
         if (!file) {
-            return res.status(404).json({ error: "File not found" })
+            return res.status(404).json({ error: "File not found" });
         }
 
         if (file.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "Forbidden" })
+            return res.status(403).json({ msg: "Forbidden" });
         }
 
-        await axios.delete(
-            `${process.env.STORAGE_URL}/delete/${file.filename}`,
-            {
-                data: {
-                    user: req.user
-                }
-            }
-        )
+        try {
+            await axios.delete(
+                `${process.env.STORAGE_URL}/delete/${file.filename}`,
+                { data: { user: req.user } }
+            );
+        } catch (storageErr) {
+            console.warn("Storage service couldn't find file, proceeding with DB deletion.");
+        }
 
-        await file.destroy()
+        await file.destroy();
 
-        res.json({ msg: "File Deleted Successfully" })
+        return res.json({ msg: "File Deleted Successfully" });
     } catch (err) {
-        console.error(err)
-        res.status(500).json({ error: "Delete Failed" })
+        console.error("Delete Controller Error:", err);
+
+        return res.status(500).json({ 
+            error: "Delete Failed", 
+            details: err.message 
+        });
     }
 }
 
@@ -454,6 +456,265 @@ async function renameFile(req, res) {
     }
 }
 
+async function moveToTrash(req, res) {
+    try {
+        const id = req.params.id
+        const file = await File.findByPk(id)
+
+        if(!file || file.ownerId != req.user.id) {
+            return res.status(404).json({ msg: "File not found" })
+        }
+
+        file.isTrashed = true;
+        file.deletedAt = new Date();
+        await file.save()
+
+        res.json({ msg: "Moved to Trash successfully" })
+    } catch(err) {
+        res.status(500).json({ msg: "Trash Failed" })
+    }
+}
+
+async function listTrash(req, res) {
+    try {
+        const [files ,folders] = await Promise.all([
+            File.findAll({ where: { ownerId: req.user.id, isTrashed: true } }),
+            Folder.findAll({ where: { ownerId: req.user.id, isTrashed: true } })
+        ])
+
+        const combinedData = [
+            ...folders.map(f => ({
+                id: f.id,
+                name: f.name,
+                type: 'Folder',
+                size: '---',
+                date: f.deletedAt
+            })),
+            ...files.map(f => ({
+                id: f.id,
+                name: f.originalFilename,
+                type: 'File',
+                size: f.size,
+                date: f.deletedAt
+            }))
+        ]
+
+        res.status(200).json({
+            combinedData,
+            msg: "Trash loaded successfully"
+        })
+    } catch(err) {
+        res.status(500).json({ error: "Failed to fetch trash items" })
+    }
+}
+
+async function restoreItem(req, res) {
+    const file = await File.findByPk(req.params.id)
+
+    await file.update({
+        isTrashed: false,
+        deletedAt: null
+    })
+
+    res.json({ msg: "Restored" })
+}
+
+async function sharedItem(req, res) { 
+    try {
+        const { itemId, itemType, sharedWithUserId, permission } = req.body
+
+        if (!itemId || !itemType || !sharedWithUserId) {
+            return res.status(400).json({ msg: "Missing required fields" });
+        }
+
+        if (sharedWithUserId == req.user.id) {
+            return res.status(400).json({ msg: "You cannot share an item with yourself" });
+        }
+
+        const Model = itemType.toLowerCase() === 'file' ? File : Folder
+        const item = await Model.findByPk(itemId)
+
+        if (!item) {
+            return res.status(404).json({ msg: "Item not found" });
+        }
+
+        if (item.ownerId !== req.user.id) {
+            return res.status(403).json({ msg: "You don't have permission to share this item" });
+        }
+
+        const [share, created] = await SharedItem.findOrCreate({
+            where: {
+                itemId,
+                itemType: itemType.toLowerCase(),
+                sharedWith: sharedWithUserId,
+                ownerId: req.user.id
+            },
+            defaults: {
+                permission: permission || 'read',
+                status: 'active',
+                isSavedByRecipient: false
+            }
+        })
+
+        if (!created) {
+            share.status = 'active';
+            share.permission = permission || 'read';
+            await share.save();
+        }
+
+        res.status(201).json({ 
+            msg: created ? "Item shared successfully" : "Share permissions updated", 
+            share 
+        })
+    } catch(err) {
+        res.status(500).json({ error: err.message })
+    }
+}
+
+async function revokeShare(req, res) {
+    try {
+        const { shareId } = req.params
+
+        const share = await SharedItem.findOne({
+            where: {
+                id: shareId,
+                ownerId: req.user.id
+            }
+        })
+
+        if(!share) {
+            return res.status(404).json({ msg: "Share record not found" })
+        }
+
+        share.status = 'revoked'
+        await share.save()
+
+        res.json({ msg: "Access Revoked" })
+    } catch(err) {
+        res.status(500).json({ error: err.message })
+    }
+}
+
+async function saveSharedItem(req, res) {
+    try {
+        const { shareId } = req.params
+
+        const share = await SharedItem.findOne({
+            where: {
+                id: shareId,
+                sharedWith: req.user.id
+            }
+        })
+
+        if(!share || share.status == 'revoked') {
+            return res.status(403).json({ msg: "Access unavailable" })
+        }
+
+        share.isSavedByRecipient = true
+        await share.save()
+
+        res.json({ msg: "Item saved to your shared library" })
+    } catch(err) {
+        res.status(500).json({ error: err.message })
+    }
+}
+
+async function listSharedWithMe(req, res) {
+    try {
+        if(!req.user || !req.user.id) {
+            return res.status(401).json({ msg: "Unauthorized" })
+        }
+
+        const shares = await SharedItem.findAll({
+            where: {
+                sharedWith: req.user.id,
+                status: 'active',
+                isSavedByRecipient: true
+            }
+        })
+
+        const combinedData = await Promise.all(shares.map(async (share) => {
+            const Model = share.itemType == 'file' ? File : Folder
+            const item = await Model.findByPk(share.itemId)
+
+            if(!item) {
+                return null
+            }
+
+            return {
+                id: item.id,
+                shareId: share.id,
+                name: share.itemType === 'file' ? item.originalFilename : item.name,
+                type: share.itemType === 'file' ? 'File' : 'Folder',
+                size: share.itemType === 'file' ? item.size : '---',
+                date: share.sharedAt,
+                permission: share.permission
+            }
+        }))
+
+        const filteredData = combinedData.filter(item => item != null)
+
+        res.status(200).json({
+            combinedData: filteredData,
+            msg: "Shared items loaded successfully"
+        })
+    } catch(err) {
+        console.error(err)
+        res.status(500).json({ error: "Failed to fetch shared items" })
+    }
+}
+
+async function listPendingNotifications(req, res) {
+    try {
+        const pendingShares = await SharedItem.findAll({
+            where: {
+                sharedWith: req.user.id,
+                status: 'active',
+                isSavedByRecipient: false
+            }
+        })
+
+        const notifications = await Promise.all(pendingShares.map(async (share) => {
+            const Model = share.itemType === 'file' ? File : Folder
+            const item = await Model.findByPk(share.itemId)
+
+            return {
+                shareId: share.id,
+                message: `User ${share.ownerId} shared a ${share.itemType}: ${item ? (item.originalFilename || item.name) : 'Unknown'}`,
+                date: share.sharedAt
+            }
+        }))
+
+        res.status(200).json({ notifications })
+    } catch(err) {
+        res.status(500).json({ error: err.message })
+    }
+}
+
+async function declineShare(req, res) {
+    try {
+        const { shareId } = req.params;
+
+        const share = await SharedItem.findOne({
+            where: {
+                id: shareId,
+                sharedWith: req.user.id,
+                status: 'active'
+            }
+        });
+
+        if (!share) {
+            return res.status(404).json({ msg: "Share record not found or already handled" });
+        }
+
+        await share.destroy();
+
+        res.json({ msg: "Invitation declined successfully" });
+    } catch (err) {
+        console.error("Decline share error:", err);
+        res.status(500).json({ error: err.message });
+    }
+}
 
 module.exports = {
     uploadFile,
@@ -463,5 +724,14 @@ module.exports = {
     moveFile,
     copyFile,
     deleteMultipleFiles,
-    renameFile
+    renameFile,
+    moveToTrash,
+    restoreItem,
+    listTrash,
+    sharedItem,
+    revokeShare,
+    saveSharedItem,
+    listSharedWithMe,
+    listPendingNotifications,
+    declineShare
 }

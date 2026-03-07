@@ -9,7 +9,7 @@ import { FaTrashCan } from "react-icons/fa6"
 import { LuLogOut } from "react-icons/lu"
 import { MdDarkMode, MdLightMode } from "react-icons/md"
 
-const Sidebar = ({ isDarkMode, toggleTheme }) => {
+const Sidebar = ({ isDarkMode, toggleTheme, onViewHome, onViewTrash, onViewShared }) => {
     const navigate = useNavigate()
 
     const handleLogOut = () => {
@@ -20,10 +20,16 @@ const Sidebar = ({ isDarkMode, toggleTheme }) => {
     return (<>
         <aside className="sidebar">
             <div className="sidebar-top">
-                <div className="nav-item active">
-                    <FaHome className="nav-icon" /> <span>Home</span>
+                <div
+                    className="nav-item active"
+                    onClick={() => {
+                        navigate("/")
+                        onViewHome()
+                    }}
+                >
+                        <FaHome className="nav-icon" /> <span>Home</span>
                 </div>
-                <div className="nav-item">
+                <div className="nav-item" onClick={() => {navigate("/notifications")}}>
                     <FaBell className="nav-icon" /> <span>Notifications</span>
                 </div>
             </div>
@@ -42,11 +48,23 @@ const Sidebar = ({ isDarkMode, toggleTheme }) => {
                 <div className="nav-item">
                     <MdAudiotrack className="nav-icon" /> <span>Audio</span>
                 </div>
-                <div className="nav-item">
-                    <IoPerson className="nav-icon" /> <span>Shared with me</span>
+                <div 
+                    className="nav-item"
+                    onClick = {() => {
+                        navigate("/")
+                        onViewShared()
+                    }}
+                >
+                        <IoPerson className="nav-icon" /> <span>Shared with me</span>
                 </div>
-                <div className="nav-item">
-                    <FaTrashCan className="nav-icon" /> <span>Trash</span>
+                <div
+                    className="nav-item"
+                    onClick={() => {
+                        navigate("/")
+                        onViewTrash()
+                    }}
+                >
+                        <FaTrashCan className="nav-icon" /> <span>Trash</span>
                 </div>
             </div>
 

@@ -33,8 +33,18 @@ const Folder = sequelize.define(
                 model: 'folders',
                 key: 'id'
             },
-            onDelete: 'CASCADE', 
+            onDelete: 'CASCADE',
             onUpdate: 'CASCADE'
+        },
+
+        isTrashed: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        
+        deletedAt: {
+            type: DataTypes.DATE,
+            allowNull: true
         }
     },
     {

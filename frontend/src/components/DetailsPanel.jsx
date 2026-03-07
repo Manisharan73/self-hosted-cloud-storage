@@ -4,7 +4,7 @@ import axios from "axios"
 import fileIcon from "../assets/default.svg"
 import { IoClose } from "react-icons/io5"
 
-const DetailsPanel = ({ item, onSelect }) => {
+const DetailsPanel = ({ item, onSelect, view }) => {
     if (!item) return <aside className="details-panel empty"></aside>
 
     const icon = (item) => {
@@ -38,7 +38,7 @@ const DetailsPanel = ({ item, onSelect }) => {
                 <DetailRow label="Type" value={item.type} />
                 <DetailRow label="Size" value={item.size || 'N/A'} />
                 <DetailRow label="Owner" value={item.owner || 'You'} />
-                <DetailRow label="Modified" value={item.date || 'Today'} />
+                <DetailRow label={view === "trash" ? "Deleted" : "Modified"} value={item.date || 'Today'} />
             </div>
 
             <div className="settings-section">

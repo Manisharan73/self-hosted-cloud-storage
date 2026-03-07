@@ -35,6 +35,16 @@ const File = sequelize.define(
             },
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE'
+        },
+
+        isTrashed: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+
+        deletedAt: {
+            type: DataTypes.DATE,
+            allowNull: true
         }
     },
     {

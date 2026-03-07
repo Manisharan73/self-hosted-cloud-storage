@@ -111,50 +111,42 @@ async function createFolder(req, res) {
 }
 
 async function deleteFolder(req, res) {
-    const folderId = req.params.id
-
-    if (!folderId) {
-        return res.status(400).json({ msg: "Folder ID is required" })
-    }
-
-    const folder = await Folder.findByPk(folderId)
-
-    if (!folder) {
-        return res.status(404).json({ error: "File not found" })
-    }
-
-    if (folder.ownerId !== req.user.id) {
-        return res.status(403).json({ msg: "Forbidden" })
-    }
-
-    const files = await File.findAll({
-        where: {
-            parentFolderId: folder.id
-        }
-    })
-
-    const filenames = files.filter(file => file.filename).map(file => file.filename)
-
     try {
-        await axios.post(
-            `${process.env.STORAGE_URL}/delete`,
-            {
-                filenames,
-                user: req.user
-            }
-        )
+        const folderId = req.params.id;
 
-        await folder.destroy().then(() => {
-            return res.status(200).json({ msg: "Folder deleted successfully" })
-        }).catch((err) => {
-            return res.status(500).json({ msg: "Failed to delete folder", err: err })
-        })
+        const folder = await Folder.findByPk(folderId);
+        if (!folder) return res.status(404).json({ error: "Folder not found" });
+        if (folder.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" });
+
+        const files = await File.findAll({
+            where: { parentFolderId: folderId, ownerId: req.user.id }
+        });
+
+        if (files.length > 0) {
+            const filenames = files.map(file => file.filename);
+            
+            try {
+                await axios.post(`${process.env.STORAGE_URL}/delete`, {
+                    filenames,
+                    user: req.user
+                });
+            } catch (storageErr) {
+                console.warn("Storage cleanup failed or files already gone, proceeding...");
+            }
+
+            await File.destroy({ where: { parentFolderId: folderId } });
+        }
+
+        await folder.destroy();
+
+        return res.status(200).json({ msg: "Folder deleted permanently" });
+
     } catch (err) {
-        console.error("Delete error:", err.message)
+        console.error("Delete error:", err);
         return res.status(500).json({
-            msg: "Failed to delete files",
+            msg: "Failed to delete folder",
             error: err.message
-        })
+        });
     }
 }
 
@@ -221,31 +213,73 @@ async function copyFolder(req, res) {
 
 async function renameFolder(req, res) {
     try {
-        const { id: folderId, name: foldername } = req.body
+        const { id: folderId, name: foldername } = req.body;
 
-        if (!folderId || !foldername) return res.status(401).json({ msg: "Folder id is required" })
+        if (!folderId || !foldername) {
+            return res.status(400).json({ msg: "Folder ID and name are required" });
+        }
 
-        const folder = await File.findByPk(folderId)
+        const folder = await Folder.findByPk(folderId);
 
         if (!folder) {
-            return res.status(404).json({ error: "File not found" })
+            return res.status(404).json({ error: "Folder not found" });
         }
 
         if (folder.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "Forbidden" })
+            return res.status(403).json({ msg: "Forbidden" });
         }
 
-        folder.originalFilename = foldername
-        await folder.save()
-            .then(() => { return res.status(200).json({ msg: "Renamed Successfully" }) })
-            .catch((err) => { return res.status(500).json({ msg: "Failed to move", err: err }) })
+        folder.name = foldername;
+        
+        await folder.save();
+        
+        return res.status(200).json({ msg: "Renamed Successfully" });
 
     } catch (err) {
-        console.error("Delete error:", err)
+        console.error("Rename error:", err);
         return res.status(500).json({
-            msg: "Failed to delete files",
+            msg: "Failed to rename folder",
             error: err.message
+        });
+    }
+}
+
+async function moveToTrash(req, res) {
+    try {
+        const id = req.params.id
+        const folder = await Folder.findByPk(id)
+
+        if(!folder || folder.ownerId != req.user.id) {
+            return res.status(404).json({ msg: "Folder not found" })
+        }
+
+        folder.isTrashed = true
+        folder.deletedAt = new Date()
+
+        await folder.save()
+
+        res.json({ msg: "Folder moved to Trash successfully" })
+    } catch(err) {
+        res.status(500).json({ msg: "Trash failed", error: err.message })
+    }
+}
+
+async function restoreItem(req, res) {
+    try {
+        const folder = await Folder.findByPk(req.params.id)
+
+        if(!folder || folder.ownerId != req.user.id) {
+            return res.status(404).json({ msg: "Folder not found" })
+        }
+
+        await folder.update({
+            isTrashed: false,
+            deletedAt: null
         })
+
+        res.json({ msg: "Folder restored successfully" })
+    } catch(err) {
+        res.status(500).json({ msg: "Restore failed" })
     }
 }
 
@@ -255,5 +289,7 @@ module.exports = {
     deleteFolder,
     moveFolder,
     copyFolder,
-    renameFolder
+    renameFolder,
+    moveToTrash,
+    restoreItem
 }

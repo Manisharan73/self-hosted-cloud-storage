@@ -108,9 +108,11 @@ async function listFiles(req, res) {
         if (currentFolder.ownerId !== req.user.id)
             return res.status(401).json({ msg: "Unauthorized" })
 
+        const viewingTrash = currentFolder.isTrashed
+
         const [files, folders] = await Promise.all([
-            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } }),
-            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } })
+            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: viewingTrash } }),
+            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: viewingTrash } })
         ])
 
         const combinedData = [
@@ -210,9 +212,9 @@ async function deleteFile(req, res) {
     } catch (err) {
         console.error("Delete Controller Error:", err);
 
-        return res.status(500).json({ 
-            error: "Delete Failed", 
-            details: err.message 
+        return res.status(500).json({
+            error: "Delete Failed",
+            details: err.message
         });
     }
 }
@@ -460,7 +462,7 @@ async function moveToTrash(req, res) {
         const id = req.params.id
         const file = await File.findByPk(id)
 
-        if(!file || file.ownerId != req.user.id) {
+        if (!file || file.ownerId != req.user.id) {
             return res.status(404).json({ msg: "File not found" })
         }
 
@@ -469,20 +471,48 @@ async function moveToTrash(req, res) {
         await file.save()
 
         res.json({ msg: "Moved to Trash successfully" })
-    } catch(err) {
+    } catch (err) {
         res.status(500).json({ msg: "Trash Failed" })
     }
 }
 
 async function restoreItem(req, res) {
-    const file = await File.findByPk(req.params.id)
+    try {
+        const file = await File.findByPk(req.params.id)
 
-    await file.update({
-        isTrashed: false,
-        deletedAt: null
-    })
+        if (!file || file.ownerId != req.user.id) {
+            return res.status(404).json({ msg: "File not found" })
+        }
 
-    res.json({ msg: "Restored" })
+        let targetFolderId = file.parentFolderId
+
+        if (targetFolderId) {
+            const parentFolder = await Folder.findByPk(targetFolderId)
+
+            if (!parentFolder || parentFolder.isTrashed) {
+                const rootFolder = await Folder.findOne({
+                    where: {
+                        ownerId: req.user.id,
+                        parentFolderId: null
+                    }
+                })
+
+                targetFolderId = rootFolder ? rootFolder.id : null
+            }
+        }
+
+        await file.update({
+            isTrashed: false,
+            deletedAt: null,
+            parentFolderId: targetFolderId
+        })
+
+        res.json({
+            msg: targetFolderId === file.parentFolderId ? "Restored" : "Restored to Root (Parent is trashed)"
+        })
+    } catch(err) {
+        res.status(500).json({ msg: "Restore failed" })
+    }
 }
 
 module.exports = {

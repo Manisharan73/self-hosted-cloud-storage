@@ -6,6 +6,7 @@ import { FaTrashCan } from "react-icons/fa6"
 import { LuLogOut } from "react-icons/lu"
 import { MdDarkMode, MdLightMode } from "react-icons/md"
 import { useNotifications } from '../context/NotificationContext'
+import { GoDotFill } from "react-icons/go";
 
 const Sidebar = ({ isDarkMode, toggleTheme }) => {
     const navigate = useNavigate()
@@ -31,10 +32,12 @@ const Sidebar = ({ isDarkMode, toggleTheme }) => {
             >
                 <FaHome className="nav-icon" /> <span>Home</span>
             </div>
-            <div className="nav-item" onClick={() => navigate("/notifications")}>
-                <FaBell className="nav-icon" /> 
-                <span>Notifications</span>
-                {receivedCount > 0 && <span className="notif-badge">{receivedCount}</span>}
+            <div className={`nav-item ${isActive('/notifications')}`} onClick={() => navigate("/notifications")}>
+                <FaBell className="nav-icon" />
+                <div className="notif-bar">
+                    <span>Notifications</span>
+                    {receivedCount > 0 && <span className="notif-badge"><GoDotFill /></span>}
+                </div>
             </div>
             <div
                 className={`nav-item ${isActive('/shared')}`}

@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../sequelize')
+const Folder = require('./folder') // Import Folder for association
 
 const File = sequelize.define(
     'File',
@@ -9,10 +10,8 @@ const File = sequelize.define(
             primaryKey: true,
             autoIncrement: true
         },
-
         ownerId: {
             type: DataTypes.INTEGER,
-            // allowNull: false,
             references: {
                 model: 'users',
                 key: 'id'
@@ -20,15 +19,13 @@ const File = sequelize.define(
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE'
         },
-
         originalFilename: DataTypes.STRING,
         filename: DataTypes.STRING,
         size: DataTypes.BIGINT,
         mimetype: DataTypes.STRING,
-
         parentFolderId: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true, // Changed to true to allow root-level or flexible restoration
             references: {
                 model: 'folders',
                 key: 'id'
@@ -36,12 +33,10 @@ const File = sequelize.define(
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE'
         },
-
         isTrashed: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
-
         deletedAt: {
             type: DataTypes.DATE,
             allowNull: true
@@ -52,5 +47,8 @@ const File = sequelize.define(
         timestamps: true
     }
 )
+
+// Association
+File.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' });
 
 module.exports = File

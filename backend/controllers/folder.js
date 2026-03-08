@@ -22,16 +22,15 @@ async function copyFolderTree(sourceFolderId, targetParentId, userId) {
 
         while (queue.length > 0) {
             const { sourceId, targetParentId } = queue.shift()
-
             const folder = await Folder.findByPk(sourceId)
 
-            // const newFolder = await Folder.create({
-            //     ownerId: userId,
-            //     name: folder.name,
-            //     parentFolderId: targetParentId
-            // })
+            const newFolder = await Folder.create({
+                ownerId: userId,
+                name: folder.name,
+                parentFolderId: targetParentId
+            })
 
-            const files = await File.findAll({ parentFolderId: sourceId })
+            const files = await File.findAll({ where: { parentFolderId: sourceId } })
 
             if (files.length > 0) {
                 const newFiles = files.map(f => ({
@@ -40,53 +39,36 @@ async function copyFolderTree(sourceFolderId, targetParentId, userId) {
                     filename: f.filename,
                     size: f.size,
                     mimetype: f.mimetype,
-                    path: f.path,
-                    actualPath: f.actualPath,
-                    parentFolderId: newFolder._id
+                    parentFolderId: newFolder.id // Fixed: .id instead of ._id
                 }))
-
-                await File.insertMany(newFiles)
+                // Fixed: bulkCreate instead of insertMany
+                await File.bulkCreate(newFiles)
             }
 
-            const subFolders = await Folder.findAll({ parentFolderId: sourceId })
-
+            const subFolders = await Folder.findAll({ where: { parentFolderId: sourceId } })
             for (const sub of subFolders) {
                 queue.push({
-                    sourceId: sub._id,
-                    targetParentId: newFolder._id
+                    sourceId: sub.id, // Fixed: .id instead of ._id
+                    targetParentId: newFolder.id // Fixed: .id instead of ._id
                 })
             }
         }
     } catch (err) {
-        console.log(err)
+        console.error("Copy Tree Error:", err)
     }
 }
 
 async function createFolder(req, res) {
     try {
-        if (!req.user || !req.user.id) {
-            return res.status(401).json({ msg: "Unauthorized" })
-        }
-
         const { name, parentFolderId } = req.body
-
-        if (!name) {
-            return res.status(400).json({ msg: "Folder name is required" })
-        }
-
         let finalParentId = parentFolderId
 
         if (!parentFolderId) {
             const rootFolder = await Folder.findOne({
-                ownerId: req.user.id,
-                parentFolderId: null
+                where: { ownerId: req.user.id, parentFolderId: null }
             })
-
-            if (!rootFolder) {
-                return res.status(404).json({ msg: "Root folder not found" })
-            }
-
-            finalParentId = rootFolder._id
+            if (!rootFolder) return res.status(404).json({ msg: "Root folder not found" })
+            finalParentId = rootFolder.id // Fixed: .id instead of ._id
         }
 
         await Folder.create({
@@ -95,18 +77,9 @@ async function createFolder(req, res) {
             parentFolderId: finalParentId
         })
 
-        return res.status(201).json({
-            status: true,
-            msg: "Folder created successfully"
-        })
-
+        return res.status(201).json({ status: true, msg: "Folder created successfully" })
     } catch (err) {
-        console.error(err)
-        return res.status(500).json({
-            status: false,
-            msg: "Folder creation failed",
-            err
-        })
+        return res.status(500).json({ status: false, msg: "Failed", error: err.message })
     }
 }
 

@@ -61,3 +61,8 @@
 .logout:hover {
     background-color: #fff1f1;
 }
+
+.notif-bar {
+    display: flex;
+    gap: 100px;
+}

@@ -224,34 +224,77 @@ async function declineShare(req, res) {
 
 async function listTrash(req, res) {
     try {
-        const [files ,folders] = await Promise.all([
-            File.findAll({ where: { ownerId: req.user.id, isTrashed: true } }),
-            Folder.findAll({ where: { ownerId: req.user.id, isTrashed: true } })
-        ])
+        const { id } = req.query;
+        let currentFolder = null;
+        let filteredFolders = [];
+        let filteredFiles = [];
+
+        if (!id || id === "root") {
+            const [folders, files] = await Promise.all([
+                Folder.findAll({ 
+                    where: { ownerId: req.user.id, isTrashed: true },
+                    include: [{ model: Folder, as: 'parentFolder', required: false }]
+                }),
+                File.findAll({ 
+                    where: { ownerId: req.user.id, isTrashed: true },
+                    include: [{ model: Folder, as: 'parentFolder', required: false }]
+                })
+            ]);
+
+            filteredFolders = folders.filter(f => !f.parentFolder || !f.parentFolder.isTrashed);
+            filteredFiles = files.filter(f => !f.parentFolder || !f.parentFolder.isTrashed);
+
+        } else {
+            currentFolder = await Folder.findByPk(id);
+
+            if (!currentFolder || currentFolder.ownerId !== req.user.id) {
+                return res.status(404).json({ msg: "Folder not found" });
+            }
+
+            [filteredFolders, filteredFiles] = await Promise.all([
+                Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: id } }),
+                File.findAll({ where: { ownerId: req.user.id, parentFolderId: id } })
+            ]);
+        }
 
         const combinedData = [
-            ...folders.map(f => ({
-                id: f.id,
-                name: f.name,
-                type: 'Folder',
-                size: '---',
-                date: f.deletedAt
+            ...filteredFolders.map(f => ({ 
+                id: f.id, 
+                name: f.name, 
+                type: 'Folder', 
+                size: '---', 
+                date: f.deletedAt || f.updatedAt 
             })),
-            ...files.map(f => ({
-                id: f.id,
-                name: f.originalFilename,
-                type: 'File',
-                size: f.size,
-                date: f.deletedAt
+            ...filteredFiles.map(f => ({ 
+                id: f.id, 
+                name: f.originalFilename, 
+                type: 'File', 
+                size: f.size, 
+                date: f.deletedAt || f.updatedAt 
             }))
-        ]
+        ];
+
+        let backId = null;
+        if (id && id !== "root") {
+            const parent = currentFolder.parentFolderId ? await Folder.findByPk(currentFolder.parentFolderId) : null;
+            
+            if (!parent || !parent.isTrashed) {
+                backId = "root";
+            } else {
+                backId = parent.id;
+            }
+        }
 
         res.status(200).json({
             combinedData,
-            msg: "Trash loaded successfully"
-        })
+            currentFolder: {
+                id: id || "root",
+                parentFolderId: backId
+            }
+        });
     } catch(err) {
-        res.status(500).json({ error: "Failed to fetch trash items" })
+        console.error("Trash Fetch Error:", err);
+        res.status(500).json({ error: err.message });
     }
 }
 

@@ -9,7 +9,6 @@ const Folder = sequelize.define(
             primaryKey: true,
             autoIncrement: true
         },
-
         ownerId: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -20,12 +19,10 @@ const Folder = sequelize.define(
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE'
         },
-
         name: {
             type: DataTypes.STRING,
             allowNull: false
         },
-
         parentFolderId: {
             type: DataTypes.INTEGER,
             allowNull: true,
@@ -36,12 +33,10 @@ const Folder = sequelize.define(
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE'
         },
-
         isTrashed: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
-        
         deletedAt: {
             type: DataTypes.DATE,
             allowNull: true
@@ -52,5 +47,9 @@ const Folder = sequelize.define(
         timestamps: true
     }
 )
+
+// Associations
+Folder.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' });
+Folder.hasMany(Folder, { foreignKey: 'parentFolderId', as: 'subFolders' });
 
 module.exports = Folder

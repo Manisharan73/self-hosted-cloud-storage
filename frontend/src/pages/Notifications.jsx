@@ -3,34 +3,30 @@ import "../styles/Notifications.css"
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { IoMailOpenOutline, IoSendOutline, IoCheckmark, IoClose, IoTrashOutline } from "react-icons/io5"
-// Import the hook from your context file
+import { FaBars } from 'react-icons/fa' 
 import { useNotifications } from "../context/NotificationContext"
 
 const Notifications = () => {
     const [isDarkMode, setIsDarkMode] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Added for responsiveness
     const [activeTab, setActiveTab] = useState('received')
     
-    // 1. Use the global state and functions from Context
     const { notifications, setNotifications, loading, fetchData } = useNotifications()
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
-    // 2. Fetch data on mount via the context function
     useEffect(() => {
         fetchData()
     }, [])
 
     const handleAction = async (action, shareId) => {
         let endpoint = "";
-
         if (action === 'accept') endpoint = `/user/share/save/${shareId}`;
         if (action === 'decline') endpoint = `/user/share/decline/${shareId}`;
         if (action === 'revoke') endpoint = `/user/share/revoke/${shareId}`;
 
         try {
             await axios.post(`${import.meta.env.VITE_BACKEND}${endpoint}`, {}, { withCredentials: true });
-
-            // 3. Update the GLOBAL state so Sidebar badge reflects changes immediately
             setNotifications(prev => ({
                 received: prev.received.filter(n => n.shareId !== shareId),
                 sent: prev.sent.filter(n => n.shareId !== shareId)
@@ -43,11 +39,27 @@ const Notifications = () => {
 
     return (
         <div className={`notif-container ${isDarkMode ? 'dark' : ''}`}>
-            <Sidebar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+            {/* Sidebar Overlay */}
+            <div 
+                className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+                onClick={() => setIsSidebarOpen(false)}
+            ></div>
+
+            <Sidebar 
+                isDarkMode={isDarkMode} 
+                toggleTheme={toggleTheme} 
+                isOpen={isSidebarOpen} 
+                setIsOpen={setIsSidebarOpen} 
+            />
+
             <main className="notif-content">
                 <header className="notif-header">
-                    <h1>Sharing Notifications</h1>
-                    <p>Manage pending invitations and sent requests</p>
+                    <div className="header-left-notif">
+                        <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+                            <FaBars />
+                        </button>
+                        <h1>Sharing Notifications</h1>
+                    </div>
                 </header>
 
                 <div className="notif-tabs">
@@ -79,10 +91,10 @@ const Notifications = () => {
                                     </div>
                                     <div className="notif-details">
                                         <h3>{n.itemName}</h3>
-                                        <p>
+                                        <p className="target-user">
                                             {activeTab === 'received' 
                                                 ? `From: ${n.targetUser}` 
-                                                : `Sent to: ${n.targetUser}`}
+                                                : `To: ${n.targetUser}`}
                                         </p>
                                         <p className="notif-date">{new Date(n.date).toLocaleDateString()}</p>
                                     </div>
@@ -92,15 +104,15 @@ const Notifications = () => {
                                     {activeTab === 'received' ? (
                                         <>
                                             <button className="btn-action btn-save" onClick={() => handleAction('accept', n.shareId)}>
-                                                <IoCheckmark /> Accept
+                                                <IoCheckmark /> <span>Accept</span>
                                             </button>
                                             <button className="btn-action btn-decline" onClick={() => handleAction('decline', n.shareId)}>
-                                                <IoClose /> Decline
+                                                <IoClose /> <span>Decline</span>
                                             </button>
                                         </>
                                     ) : (
                                         <button className="btn-action btn-revoke" onClick={() => handleAction('revoke', n.shareId)}>
-                                            <IoTrashOutline /> Revoke Access
+                                            <IoTrashOutline /> <span>Revoke</span>
                                         </button>
                                     )}
                                 </div>

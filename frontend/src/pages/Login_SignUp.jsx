@@ -1,13 +1,25 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import '../styles/Login_SignUp.css'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-
+import { MdDarkMode, MdLightMode } from "react-icons/md"
 
 const Login_SignUp = () => {
     const [isLogin, setIsLogin] = useState(true)
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
+
+    // Theme state: Persists choice in localStorage
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem('theme')
+        return savedTheme === 'light' ? false : true
+    })
+
+    const toggleTheme = () => {
+        const newTheme = !isDarkMode
+        setIsDarkMode(newTheme)
+        localStorage.setItem('theme', newTheme ? 'dark' : 'light')
+    }
 
     const [loginFields, setLoginFields] = useState({
         check: '',
@@ -55,11 +67,8 @@ const Login_SignUp = () => {
             if (response.status === 200 || response.status === 201) {
                 if (isLogin) {
                     localStorage.setItem('token', response.data.accessToken)
-
                     navigate('/', { replace: true })
                 } else {
-                    // alert("Registration successful! Please check your email to verify your account.")
-
                     setIsLogin(true)
                 }
             }
@@ -72,14 +81,16 @@ const Login_SignUp = () => {
     }
 
     return (
-        <div className="auth-container">
+        <div className={`auth-container ${isDarkMode ? 'dark' : ''}`}>
+            {/* Floating Theme Toggle */}
+            <button className="auth-theme-toggle" onClick={toggleTheme} type="button">
+                {isDarkMode ? <MdLightMode /> : <MdDarkMode />}
+            </button>
+
             <div className="auth-card">
                 <div className="auth-header">
-                    <div className="logo-section">
-                        <div className="logo-icon">☁️</div>
-                        <h1>CloudStorage</h1>
-                    </div>
-                    <p>{isLogin ? "Welcome back! Please login." : "Create your account."}</p>
+                    <h1>{isLogin ? "Welcome back!" : "Create account"}</h1>
+                    <p>{isLogin ? "Please login to manage your files." : "Sign up to start storing files."}</p>
                 </div>
 
                 <div className="auth-toggle">
@@ -99,7 +110,7 @@ const Login_SignUp = () => {
                                 <input
                                     type="text"
                                     name="fullName"
-                                    placeholder="Cody"
+                                    placeholder="John Doe"
                                     value={signupFields.fullName}
                                     onChange={handleSignupChange}
                                     required
@@ -110,7 +121,7 @@ const Login_SignUp = () => {
                                 <input
                                     type='text'
                                     name='userName'
-                                    placeholder='cody123'
+                                    placeholder='johndoe123'
                                     value={signupFields.userName}
                                     onChange={handleSignupChange}
                                     required
@@ -124,7 +135,7 @@ const Login_SignUp = () => {
                         <input
                             type={isLogin ? "text" : "email"}
                             name={isLogin ? "check" : "email"}
-                            placeholder={isLogin ? "Enter username or email" : "cody@example.com"}
+                            placeholder={isLogin ? "Email or Username" : "email@example.com"}
                             value={isLogin ? loginFields.check : signupFields.email}
                             onChange={isLogin ? handleLoginChange : handleSignupChange}
                             required
@@ -143,25 +154,16 @@ const Login_SignUp = () => {
                         />
                     </div>
 
-                    {isLogin && (
-                        <div className="form-options">
-                            <label className="checkbox-container">
-                                <input type="checkbox" /> Remember me
-                            </label>
-                            <a href="#forgot" className="forgot-link">Forgot password?</a>
-                        </div>
-                    )}
-
-                    <button type="submit" className="primary-btn">
-                        {isLogin ? "Login" : "Create Account"}
+                    <button type="submit" className="primary-btn" disabled={loading}>
+                        {loading ? "Loading..." : (isLogin ? "Login" : "Create Account")}
                     </button>
                 </form>
 
                 <div className="auth-footer">
                     {isLogin ? (
-                        <p>Don't have an account? <span onClick={() => setIsLogin(false)}>Sign up</span></p>
+                        <p>New here? <span onClick={() => setIsLogin(false)}>Create an account</span></p>
                     ) : (
-                        <p>Already have an account? <span onClick={() => setIsLogin(true)}>Login</span></p>
+                        <p>Have an account? <span onClick={() => setIsLogin(true)}>Sign in instead</span></p>
                     )}
                 </div>
             </div>

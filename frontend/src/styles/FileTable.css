@@ -1,148 +1,93 @@
+:root {
+    --row-hover: rgba(255, 255, 255, 0.05);
+    --primary-blue: #3b82f6;
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --border-subtle: rgba(255, 255, 255, 0.1);
+}
+
+.table-responsive-container {
+    width: 100%;
+    overflow-x: hidden; /* Prevent table from breaking layout */
+}
+
 .file-manager-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 10px;
+    border-collapse: collapse;
     margin-top: 20px;
 }
 
-.table-row {
-    position: relative;
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    cursor: pointer;
-    border-radius: 100px;
-    transition:
-        transform 0.2s ease-in-out,
-        background-color 0.2s ease-in-out,
-        box-shadow 0.2s ease-in-out;
-}
-
-.table-row:hover {
-    transform: translateX(10px);
-    background-color: var(--hover-bg);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-}
-
-.table-row.active {
-    transform: translateX(-5px);
-    outline: 2px solid var(--primary-blue);
-    background-color: var(--hover-bg);
-    border-radius: 100px;
-}
-
-.table-row:has(.action_menu.active):hover {
-    transform: none;
+.file-manager-table thead th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .table-row td {
-    padding: 16px;
+    padding: 12px 16px;
     color: var(--text-main);
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    background-color: inherit;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.2s;
 }
 
-.name-cell {
+.table-row:hover { background-color: var(--row-hover); }
+.table-row.active { background-color: rgba(59, 130, 246, 0.1); }
+.table-row.active td:first-child { box-shadow: inset 4px 0 0 var(--primary-blue); }
+
+.name-content {
     display: flex;
     align-items: center;
     gap: 12px;
-    border-left: 1px solid var(--border-color);
-    border-top-left-radius: 12px;
-    border-bottom-left-radius: 12px;
 }
 
-.meta-cell {
-    font-size: 14px;
-    color: var(--text-muted);
-}
-
-.action-cell {
-    text-align: right;
-    border-right: 1px solid var(--border-color);
-    border-top-right-radius: 12px;
-    border-bottom-right-radius: 12px;
-    color: var(--text-muted);
-}
-
-.action-container {
-    position: relative;
-    display: inline-block;
-}
-
-.action_menu {
-    width: 32px;
-    height: 32px;
+.text-details {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+}
 
-    border-radius: 8px;
-    cursor: pointer;
+.name-text {
+    font-weight: 500;
+    font-size: 14px;
+    word-break: break-all; /* Prevents long filenames from breaking mobile */
+}
+
+.mobile-meta {
+    font-size: 11px;
     color: var(--text-muted);
-
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.15s ease;
+    margin-top: 2px;
 }
 
-.action_menu:hover,
-.action_menu.active {
-    background-color: var(--hover-bg);
-    color: var(--primary-blue);
-    transform: scale(1.1);
-}
+.show-mobile { display: none; }
 
-.dropdown-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
+/* Desktop view column sizing */
+.th-name { width: 50%; }
+.th-modified, .th-size { width: 25%; }
 
-    min-width: 140px;
-    z-index: 100;
+/* --- RESPONSIVE LOGIC --- */
 
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-
-    /* Isolated animation */
-    animation: menuFadeIn 0.2s ease-out;
-    transform-origin: top right;
-}
-
-.dropdown-menu button {
-    width: 100%;
-    padding: 10px 16px;
-
-    background: none;
-    border: none;
-    text-align: left;
-
-    font-size: 13px;
-    color: var(--text-main);
-    cursor: pointer;
-
-    transition: background-color 0.15s ease;
-}
-
-.dropdown-menu button:hover {
-    background-color: var(--hover-bg);
-}
-
-.dropdown-menu .delete-opt {
-    color: #ff4d4d;
-    border-top: 1px solid var(--border-color);
-}
-
-@keyframes menuFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-6px) scale(0.95);
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+
+    .show-mobile {
+        display: block !important;
+    }
+
+    .table-row td {
+        padding: 15px 10px;
+    }
+
+    .th-name {
+        width: 100%;
+    }
+
+    .icon img {
+        width: 24px;
+        height: 24px;
     }
 }

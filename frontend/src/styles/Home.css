@@ -18,7 +18,7 @@
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.section-title {
+section-title {
     font-size: 11px;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -272,4 +272,146 @@
 
 .clear-clipboard:hover {
     background: rgba(0,0,0,0.2);
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+    pointer-events: all;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 20px;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .main-content-wrapper {
+        padding: 15px;
+    }
+
+    .btn-text {
+        display: none;
+    }
+
+    .upload-btn {
+        padding: 10px;
+    }
+
+    .search-bar {
+        max-width: 150px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .home-container .main-content.flex-row {
+        flex-direction: column;
+    }
+
+    .details-panel {
+        display: none; 
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .section-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+}
+
+/* Existing Home.css content ... */
+
+.home-container .main-content {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.main-content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px;
+    height: 100vh;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+    .home-container .main-content.flex-row {
+        flex-direction: column;
+    }
+
+    .details-panel {
+        display: none !important; /* Hide details on mobile to save space */
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content-wrapper {
+        padding: 20px 15px;
+        width: 100vw; /* Ensure content takes full screen width */
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .header-left {
+        width: 100%;
+    }
+
+    .search-bar {
+        max-width: 100%;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .upload-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-text {
+        display: none; 
+    }
 }

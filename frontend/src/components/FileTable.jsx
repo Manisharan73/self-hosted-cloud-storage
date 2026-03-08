@@ -16,7 +16,6 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
 
     const onDoubleCLickHandler = async (item) => {
         if (item.type === "Folder") {
-            // If we are in Trash, we just update the ID and let the parent component fetch
             if (view === "trash") {
                 if (typeof setCurrentFolderId === "function") {
                     setCurrentFolderId(item.id);
@@ -24,7 +23,6 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                 return;
             }
 
-            // Normal Storage Navigation
             try {
                 const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${item.id}`, { withCredentials: true });
                 if (typeof setItems === "function") setItems(res.data?.combinedData);
@@ -34,7 +32,6 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                 console.error("Failed to open folder", err);
             }
         } else {
-            // File Preview/Download Logic
             try {
                 const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/download/${item?.id}`, {
                     withCredentials: true,
@@ -52,7 +49,11 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
     const formatDate = (dateString) => {
         if (!dateString) return '---';
         const d = new Date(dateString);
-        return d.toLocaleString(); // Simplified for clarity
+        return d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        }) + ' • ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     const formatSize = (size) => {
@@ -73,14 +74,13 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
     }
 
     return (
-        <>
+        <div className="table-responsive-container">
             <table className="file-manager-table">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Modified</th>
-                        <th>Size</th>
-                        <th></th>
+                        <th className="th-name">Name</th>
+                        <th className="th-modified hide-mobile">Modified</th>
+                        <th className="th-size hide-mobile">Size</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,21 +88,31 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                         <tr
                             key={item.id}
                             onDoubleClick={() => onDoubleCLickHandler(item)}
+                            onClick={() => onSelect && onSelect(item)}
                             className={`table-row ${selectedId === item.id ? 'active' : ''}`}
                             onContextMenu={(e) => handleContextMenu(e, item)}
                         >
                             <td className="name-cell">
-                                <span className={`icon ${item.type === 'Folder' ? 'folder-color' : 'file-color'}`}>
-                                    <img src={item.type === "Folder" ? folderIcon : fileIcon} alt="" width={32} height={32} />
-                                </span>
-                                <span className="name-text">{item.name}</span>
+                                <div className="name-content">
+                                    <span className={`icon ${item.type === 'Folder' ? 'folder-color' : 'file-color'}`}>
+                                        <img src={item.type === "Folder" ? folderIcon : fileIcon} alt="" width={28} height={28} />
+                                    </span>
+                                    <div className="text-details">
+                                        <span className="name-text">{item.name}</span>
+                                        {/* Mobile-only subtext */}
+                                        <span className="mobile-meta show-mobile">
+                                            {formatDate(item.date)} • {formatSize(item.size)}
+                                        </span>
+                                    </div>
+                                </div>
                             </td>
-                            <td className="meta-cell">{formatDate(item.date)}</td>
-                            <td className="meta-cell">{formatSize(item.size)}</td>
+                            <td className="meta-cell hide-mobile">{formatDate(item.date)}</td>
+                            <td className="meta-cell hide-mobile">{formatSize(item.size)}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
             {contextMenu.show && (
                 <FileContextMenu
                     x={contextMenu.x}
@@ -125,7 +135,7 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                     refreshFiles={refreshFiles}
                 />
             )}
-        </>
+        </div>
     )
 }
 

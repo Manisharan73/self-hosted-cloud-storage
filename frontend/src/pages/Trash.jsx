@@ -3,23 +3,23 @@ import Sidebar from '../components/Sidebar'
 import axios from 'axios'
 import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
-import { FaSearch } from 'react-icons/fa'
-
+import { FaSearch, FaBars } from 'react-icons/fa'
 const Trash = () => {
     const [isDarkMode, setIsDarkMode] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [items, setItems] = useState([])
     const [selectedItem, setSelectedItem] = useState(null)
     const [currentFolderId, setCurrentFolderId] = useState("root")
     const [parentFolderId, setParentFolderId] = useState(null)
+
+    const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
     const fetchTrash = async (folderId = "root") => {
         try {
             const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listTrash?id=${folderId}`, {
                 withCredentials: true
             });
-
             setItems(res.data?.combinedData);
-
             setParentFolderId(res.data?.currentFolder?.parentFolderId);
         } catch (err) {
             console.error(err);
@@ -42,15 +42,32 @@ const Trash = () => {
 
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
-            <Sidebar isDarkMode={isDarkMode} toggleTheme={() => setIsDarkMode(!isDarkMode)} />
+            <div 
+                className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+                onClick={() => setIsSidebarOpen(false)}
+            ></div>
+
+            <Sidebar 
+                isDarkMode={isDarkMode} 
+                toggleTheme={toggleTheme} 
+                isOpen={isSidebarOpen} 
+                setIsOpen={setIsSidebarOpen} 
+            />
+
             <main className="main-content flex-row">
                 <div className="main-content-wrapper flex-grow">
                     <header className="dashboard-header">
-                        <div className="search-bar">
-                            <FaSearch className="search-icon" />
-                            <input type="text" placeholder="Search trash..." />
+                        <div className="header-left">
+                            <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+                                <FaBars />
+                            </button>
+                            <div className="search-bar">
+                                <FaSearch className="search-icon" />
+                                <input type="text" placeholder="Search trash..." />
+                            </div>
                         </div>
                     </header>
+
                     <section className="section-container">
                         <div className="section-header flex justify-between items-center mb-4">
                             <h2 className='text-xl font-bold'>Trash</h2>
@@ -73,9 +90,10 @@ const Trash = () => {
                         />
                     </section>
                 </div>
-                <DetailsPanel item={selectedItem} view="trash" />
+                <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view="trash" />
             </main>
         </div>
     )
 }
+
 export default Trash

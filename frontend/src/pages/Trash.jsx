@@ -17,6 +17,19 @@ const Trash = () => {
         } catch (err) { console.error(err) }
     }
 
+    // const refreshFiles = async (folderId) => {
+    //     const id = folderId ?? "root"
+
+    //     const res = await axios.get(
+    //         `${import.meta.env.VITE_BACKEND}/file/list?id=${id}`,
+    //         { withCredentials: true }
+    //     )
+
+    //     setItems(res.data?.combinedData)
+    //     setParentFolderId(res.data?.currentFolder?.parentFolderId)
+    //     setCurrentFolderId(res.data?.currentFolder?.id)
+    // }
+
     useEffect(() => { fetchTrash() }, [])
 
     return (

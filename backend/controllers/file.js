@@ -1,87 +1,43 @@
-const axios = require("axios")
+const fs = require("fs").promises
+const path = require("path")
 const File = require("../models/file")
-const FormData = require("form-data")
 const Folder = require("../models/folder")
 const { Op } = require("sequelize")
 
+const getUserDir = (uniqueName) => path.join(__dirname, "..", "uploads", uniqueName)
+
 async function uploadFile(req, res) {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: "No file received" })
-        }
+        if (!req.file) return res.status(400).json({ error: "No file received" })
+        if (!req.params.id) return res.status(400).json({ error: "Target folder ID required" })
 
         let folderID = req.params.id
 
-        if (!req.user || !req.user.id) {
-            return res.status(401).json({ msg: "Unauthorized" })
-        }
-
-        if (folderID == "root") {
-            const folder = await Folder.findOne({
-                where: {
-                    ownerId: req.user.id,
-                    parentFolderId: null
-                }
-            })
-            if (!folder) return res.status(400).json({ error: "Root folder missing" })
-            folderID = folder.id
+        if (folderID === "root") {
+            const root = await Folder.findOne({ where: { ownerId: req.user.id, parentFolderId: null } })
+            if (!root) return res.status(404).json({ error: "Root folder not found" })
+            folderID = root.id
         } else {
-            const folder = await Folder.findByPk(folderID)
-            if (!folder || folder.ownerId !== req.user.id) {
-                return res.status(403).json({ msg: "Invalid folder" })
+            const targetFolder = await Folder.findByPk(folderID)
+            if (!targetFolder || targetFolder.ownerId !== req.user.id) {
+                await fs.unlink(req.file.path).catch(() => { })
+                return res.status(403).json({ error: "Invalid destination folder" })
             }
         }
 
-        const formData = new FormData()
-        formData.append("uniqueName", req.user.uniqueName)
-        formData.append("file", req.file.buffer, {
-            filename: req.file.originalname,
-            contentType: req.file.mimetype,
+        const newFile = await File.create({
+            originalFilename: req.file.originalname,
+            ownerId: req.user.id,
+            parentFolderId: folderID,
+            filename: req.file.filename,
+            size: req.file.size,
+            mimetype: req.file.mimetype,
         })
 
-
-        const headers = {
-            ...formData.getHeaders(),
-            "Content-Length": await new Promise((resolve, reject) => {
-                formData.getLength((err, length) => {
-                    if (err) reject(err)
-                    resolve(length)
-                })
-            })
-        }
-
-        await axios.post(
-            `${process.env.STORAGE_URL}/upload`,
-            formData,
-            { headers }
-        ).then(async (result) => {
-            // console.log(result)
-            const data = result
-            await File.create({
-                originalFilename: req.file.originalname,
-                ownerId: req.user.id,
-                parentFolderId: folderID,
-                filename: data.data.filename,
-                size: data.data.size,
-                mimetype: req.file.mimetype,
-            }).then(() => {
-                return res.status(201).json({
-                    msg: "Successful"
-                })
-            }).catch(async (err) => {
-                await axios.delete(`${process.env.STORAGE_URL}/delete/${data.data.filename}`, {
-                    data: {
-                        user: req.user
-                    }
-                })
-                return res.status(500).json({
-                    msg: "Upload failed",
-                    err: err
-                })
-            })
-        })
+        return res.status(201).json({ msg: "Successful", file: newFile })
     } catch (err) {
-        return res.status(500).json({ error: err.message })
+        if (req.file) await fs.unlink(req.file.path).catch(() => { })
+        return res.status(500).json({ error: "Internal server error during upload" })
     }
 }
 
@@ -104,9 +60,10 @@ async function listFiles(req, res) {
         }
 
         const currentFolder = await Folder.findByPk(folderID)
+        if (!currentFolder) return res.status(404).json({ msg: "Folder does not exist" })
 
         if (currentFolder.ownerId !== req.user.id)
-            return res.status(401).json({ msg: "Unauthorized" })
+            return res.status(401).json({ msg: "Unauthorized access to this folder" })
 
         const [files, folders] = await Promise.all([
             File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } }),
@@ -143,346 +100,164 @@ async function listFiles(req, res) {
 
 async function downloadFile(req, res) {
     try {
-        const id = req.params.id
-        if (!id)
-            return res.status(401).json({ msg: "Enter the valid id" })
-        const file = await File.findByPk(id)
-        if (!file) {
-            return res.status(404).json({ error: "Not found" })
-        }
+        const file = await File.findByPk(req.params.id)
+        if (!file || file.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
 
-        if (file.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "Forbidden" })
-        }
+        const filePath = path.join(getUserDir(req.user.uniqueName), file.filename)
 
-        const response = await axios.get(
-            `${process.env.STORAGE_URL}/download/${file.filename}`,
-            {
-                responseType: "stream",
-                params: {
-                    uniqueName: req.user.uniqueName,
-                },
-            }
-        )
-
-        const fileName = encodeURIComponent(file.originalFilename)
-        res.setHeader("Content-Type", file.mimetype)
-        res.setHeader(
-            "Content-Disposition",
-            `attachment filename*=UTF-8''${fileName}`
-        )
-        res.setHeader("Cache-Control", "no-store")
-
-        response.data.pipe(res)
+        return res.download(filePath, file.originalFilename)
     } catch (err) {
-        console.error(err)
-        res.status(500).json({ error: "Download failed" })
-    }
-}
-
-async function deleteFile(req, res) {
-    try {
-        const fileId = req.params.id;
-        if (!fileId) return res.status(400).json({ msg: "File id is required" });
-
-        const file = await File.findByPk(fileId);
-
-        if (!file) {
-            return res.status(404).json({ error: "File not found" });
-        }
-
-        if (file.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "Forbidden" });
-        }
-
-        try {
-            await axios.delete(
-                `${process.env.STORAGE_URL}/delete/${file.filename}`,
-                { data: { user: req.user } }
-            );
-        } catch (storageErr) {
-            console.warn("Storage service couldn't find file, proceeding with DB deletion.");
-        }
-
-        await file.destroy();
-
-        return res.json({ msg: "File Deleted Successfully" });
-    } catch (err) {
-        console.error("Delete Controller Error:", err);
-
-        return res.status(500).json({ 
-            error: "Delete Failed", 
-            details: err.message 
-        });
-    }
-}
-
-async function deleteMultipleFiles(req, res) {
-    const ids = req.body.ids
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ msg: "ids array is required and cannot be empty" })
-    }
-
-    const files = await File.findAll({
-        where: {
-            id: ids,
-            ownerId: req.user.id
-        }
-    })
-
-    if (files.length === 0) {
-        return res.status(404).json({ msg: "No files found" })
-    }
-
-
-    const filenames = files.filter(file => file.filename).map(file => file.filename)
-
-    try {
-        const result = await axios.post(
-            `${process.env.STORAGE_URL}/delete`,
-            {
-                filenames,
-                user: req.user
-            }
-        )
-
-        if (result.data?.status) {
-            await Promise.all(files.map(file => file.destroy()))
-        }
-
-        return res.status(200).json({ msg: "Files deleted successfully" })
-
-    } catch (err) {
-        console.error("Delete error:", err)
-        return res.status(500).json({
-            msg: "Failed to delete files",
-            error: err.message
-        })
-    }
-
-}
-
-async function moveFile(req, res) {
-    try {
-        const { to, id: fileId } = req.body
-
-        if (!fileId || !to) {
-            return res.status(400).json({ msg: "Missing fileId or destination folder" })
-        }
-
-        const file = await File.findByPk(fileId)
-
-        if (!file) {
-            return res.status(404).json({ msg: "File not found" })
-        }
-
-        if (file.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "Forbidden" })
-        }
-
-        if (to === file.parentFolderId) {
-            return res.status(400).json({ msg: "Already in same directory" })
-        }
-
-        const parts = file.originalFilename.split(".")
-        const ext = parts.pop()
-        const base = parts.join(".")
-        const existingFiles = await File.findAll({
-            attributes: ["originalFilename"],
-            where: {
-                ownerId: req.user.id,
-                parentFolderId: to,
-                originalFilename: {
-                    [Op.like]: `${base}%`
-                }
-            }
-        })
-
-        let newName = file.originalFilename
-
-        if (existingFiles.length > 0) {
-            const nameSet = new Set(existingFiles.map(f => f.originalFilename))
-
-            if (nameSet.has(file.originalFilename)) {
-                let maxIndex = 0
-
-                nameSet.forEach(name => {
-                    const match = name.match(/\((\d+)\)/)
-                    if (match) {
-                        const num = parseInt(match[1])
-                        if (num > maxIndex) maxIndex = num
-                    }
-                })
-
-                newName = `${base}(${maxIndex + 1}).${ext}`
-            }
-        }
-
-        file.parentFolderId = to
-        file.originalFilename = newName
-        await file.save()
-        return res.status(200).json({
-            msg: "Moved Successfully",
-            filename: newName
-        })
-
-    } catch (err) {
-        return res.status(500).json({
-            msg: "Failed to move",
-            err: err.message
-        })
+        return res.status(500).json({ error: "Download failed" })
     }
 }
 
 async function copyFile(req, res) {
     try {
         const { id: fileId, to } = req.body
-
-        if (!fileId || !to)
-            return res.status(400).json({ msg: "Missing fileId or destination folder" })
+        if (!fileId || !to) return res.status(400).json({ error: "fileId and destination (to) required" })
 
         const file = await File.findByPk(fileId)
+        if (!file || file.ownerId !== req.user.id) return res.status(404).json({ msg: "File not found" })
 
-        if (!file) {
-            return res.status(404).json({ error: "File not found" })
-        }
+        const destFolder = await Folder.findByPk(to)
+        if (!destFolder || destFolder.ownerId !== req.user.id) return res.status(403).json({ error: "Invalid destination" })
 
-        if (file.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "Forbidden" })
-        }
-
-        const result = await axios.post(
-            `${process.env.STORAGE_URL}/copy/${file.filename}`,
-            { uniqueName: req.user.uniqueName }
-        )
-
-        const filename = result.data.filename
         const parts = file.originalFilename.split(".")
         const ext = parts.pop()
         const base = parts.join(".")
-
         const copyBase = `${base}-copy`
-        const existingFiles = await File.findAll({
-            attributes: ["originalFilename"],
-            where: {
-                ownerId: req.user.id,
-                parentFolderId: to,
-                originalFilename: {
-                    [Op.like]: `${copyBase}%`
-                }
-            }
+
+        const existing = await File.findAll({
+            where: { ownerId: req.user.id, parentFolderId: to, originalFilename: { [Op.like]: `${copyBase}%` } }
         })
 
         let newName = `${copyBase}.${ext}`
-
-        if (existingFiles.length > 0) {
+        if (existing.length > 0) {
             let maxIndex = 0
-
-            existingFiles.forEach(f => {
-                const name = f.originalFilename
-                const match = name.match(/-copy\((\d+)\)/)
-
-                if (match) {
-                    const num = parseInt(match[1])
-                    if (num > maxIndex) maxIndex = num
-                } else if (name === `${copyBase}.${ext}`) {
-                    if (maxIndex === 0) maxIndex = 1
-                }
+            existing.forEach(f => {
+                const match = f.originalFilename.match(/-copy\((\d+)\)/)
+                if (match) maxIndex = Math.max(maxIndex, parseInt(match[1]))
+                else if (f.originalFilename === `${copyBase}.${ext}`) maxIndex = Math.max(maxIndex, 0)
             })
-
-            newName = `${copyBase}(${maxIndex}).${ext}`
+            newName = `${copyBase}(${maxIndex + 1}).${ext}`
         }
+
+        const newSystemName = `${Date.now()}-${newName}`
+        const userDir = getUserDir(req.user.uniqueName)
+        const sourcePath = path.join(userDir, file.filename)
+        const destPath = path.join(userDir, newSystemName)
+
+        await fs.access(sourcePath)
+        await fs.copyFile(sourcePath, destPath)
 
         try {
             await File.create({
                 originalFilename: newName,
                 ownerId: req.user.id,
                 parentFolderId: to,
-                filename: filename,
+                filename: newSystemName,
                 size: file.size,
                 mimetype: file.mimetype,
             })
-
             return res.status(201).json({ msg: "Successful" })
+        } catch (dbErr) {
+            await fs.unlink(destPath).catch(() => { })
+            throw dbErr
+        }
+    } catch (err) {
+        return res.status(500).json({ error: "Copy failed: File might be missing or DB error" })
+    }
+}
 
-        } catch (err) {
-            await axios.delete(`${process.env.STORAGE_URL}/delete/${filename}`, {
-                data: { user: req.user }
-            })
-            return res.status(500).json({
-                msg: "Upload failed",
-                err: err.message
-            })
+async function deleteFile(req, res) {
+    try {
+        const file = await File.findByPk(req.params.id)
+        if (!file || file.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
+
+        const filePath = path.join(getUserDir(req.user.uniqueName), file.filename)
+
+        await fs.unlink(filePath).catch(() => console.warn("File already missing on disk"))
+        await file.destroy()
+
+        return res.json({ msg: "Deleted successfully" })
+    } catch (err) {
+        return res.status(500).json({ error: "Delete failed" })
+    }
+}
+
+async function deleteMultipleFiles(req, res) {
+    try {
+        const { ids } = req.body
+        const files = await File.findAll({ where: { id: ids, ownerId: req.user.id } })
+        const userDir = getUserDir(req.user.uniqueName)
+
+        for (const file of files) {
+            await fs.unlink(path.join(userDir, file.filename)).catch(() => { })
+            await file.destroy()
         }
 
+        return res.json({ msg: "Batch delete successful" })
     } catch (err) {
-        console.error("Copy error:", err)
-        return res.status(500).json({
-            msg: "Failed to copy file",
-            error: err.message
-        })
+        return res.status(500).json({ error: err.message })
     }
 }
 
 async function renameFile(req, res) {
     try {
-        const { id: fileId, name: filename } = req.body
+        const { id, name } = req.body
+        if (!id || !name || name.trim() === "") return res.status(400).json({ error: "ID and valid name required" })
 
-        if (!fileId || !filename) return res.status(401).json({ msg: "File id is required" })
+        const file = await File.findByPk(id)
+        if (!file || file.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
 
-        const file = await File.findByPk(fileId)
-
-        if (!file) {
-            return res.status(404).json({ error: "File not found" })
-        }
-
-        if (file.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "Forbidden" })
-        }
-
-        file.originalFilename = filename
+        file.originalFilename = name.trim()
         await file.save()
-            .then(() => { return res.status(200).json({ msg: "Renamed Successfully" }) })
-            .catch((err) => { return res.status(500).json({ msg: "Failed to move", err: err }) })
-
+        return res.json({ msg: "Renamed Successfully" })
     } catch (err) {
-        console.error("Delete error:", err)
-        return res.status(500).json({
-            msg: "Failed to delete files",
-            error: err.message
-        })
+        return res.status(500).json({ error: "Rename failed" })
+    }
+}
+
+async function moveFile(req, res) {
+    try {
+        const { id, to } = req.body
+        const file = await File.findByPk(id)
+        if (!file || file.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
+
+        file.parentFolderId = to
+        await file.save()
+        return res.json({ msg: "Moved" })
+    } catch (err) {
+        return res.status(500).json({ error: err.message })
     }
 }
 
 async function moveToTrash(req, res) {
     try {
-        const id = req.params.id
-        const file = await File.findByPk(id)
+        const file = await File.findByPk(req.params.id)
+        if (!file || file.ownerId !== req.user.id) return res.status(404).json({ msg: "Not found" })
 
-        if(!file || file.ownerId != req.user.id) {
-            return res.status(404).json({ msg: "File not found" })
-        }
-
-        file.isTrashed = true;
-        file.deletedAt = new Date();
+        file.isTrashed = true
+        file.deletedAt = new Date()
         await file.save()
-
-        res.json({ msg: "Moved to Trash successfully" })
-    } catch(err) {
-        res.status(500).json({ msg: "Trash Failed" })
+        return res.json({ msg: "Moved to Trash" })
+    } catch (err) {
+        return res.status(500).json({ msg: "Trash failed" })
     }
 }
 
 async function restoreItem(req, res) {
-    const file = await File.findByPk(req.params.id)
+    try {
+        const file = await File.findByPk(req.params.id)
+        if (!file || file.ownerId !== req.user.id) return res.status(404).json({ msg: "Not found" })
 
-    await file.update({
-        isTrashed: false,
-        deletedAt: null
-    })
-
-    res.json({ msg: "Restored" })
+        file.isTrashed = false
+        file.deletedAt = null
+        await file.save()
+        return res.json({ msg: "Restored" })
+    } catch (err) {
+        return res.status(500).json({ msg: "Restore failed" })
+    }
 }
 
 module.exports = {

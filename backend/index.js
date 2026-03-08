@@ -10,6 +10,7 @@ const fileRouter = require("./routes/file")
 const authRouter = require("./routes/auth")
 const folderRouter = require("./routes/folder")
 const userRouter = require("./routes/user")
+require("./cron")
 
 const app = express()
 const PORT = 3001

@@ -30,9 +30,13 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                 withCredentials: true,
                 responseType: "blob"
             })
-            const url = URL.createObjectURL(res.data)
+            const blob = res.data
+            const url = URL.createObjectURL(blob)
+
             setPreviewUrl(url)
             setPreviewType(blob.type)
+
+            window.open(url)
         }
     }
 
@@ -135,7 +139,7 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
             currentFolderID={currentFolderID}
             onSelect={onSelect}
             setPopUp={setPopUp}
-            currentView = {view}
+            currentView={view}
         />}
         {popUp && <PopUpCMR
             popUp={popUp}

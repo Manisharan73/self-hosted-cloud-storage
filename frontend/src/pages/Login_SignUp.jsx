@@ -58,8 +58,6 @@ const Login_SignUp = () => {
 
                     navigate('/', { replace: true })
                 } else {
-                    // alert("Registration successful! Please check your email to verify your account.")
-
                     setIsLogin(true)
                 }
             }

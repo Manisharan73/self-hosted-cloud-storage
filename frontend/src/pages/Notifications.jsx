@@ -21,25 +21,25 @@ const Notifications = () => {
     }, [])
 
     const handleAction = async (action, shareId) => {
-        let endpoint = "";
+        let endpoint = ""
 
-        if (action === 'accept') endpoint = `/user/share/save/${shareId}`;
-        if (action === 'decline') endpoint = `/user/share/decline/${shareId}`;
-        if (action === 'revoke') endpoint = `/user/share/revoke/${shareId}`;
+        if (action === 'accept') endpoint = `/user/share/save/${shareId}`
+        if (action === 'decline') endpoint = `/user/share/decline/${shareId}`
+        if (action === 'revoke') endpoint = `/user/share/revoke/${shareId}`
 
         try {
-            await axios.post(`${import.meta.env.VITE_BACKEND}${endpoint}`, {}, { withCredentials: true });
+            await axios.post(`${import.meta.env.VITE_BACKEND}${endpoint}`, {}, { withCredentials: true })
 
             // 3. Update the GLOBAL state so Sidebar badge reflects changes immediately
             setNotifications(prev => ({
                 received: prev.received.filter(n => n.shareId !== shareId),
                 sent: prev.sent.filter(n => n.shareId !== shareId)
-            }));
+            }))
         } catch (err) {
-            console.error("Action error:", err);
-            alert(err.response?.data?.msg || "Failed to process request");
+            console.error("Action error:", err)
+            alert(err.response?.data?.msg || "Failed to process request")
         }
-    };
+    }
 
     return (
         <div className={`notif-container ${isDarkMode ? 'dark' : ''}`}>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { MdChevronRight, MdHome } from "react-icons/md";
-import '../styles/Breadcrumbs.css';
+import React from 'react'
+import { MdChevronRight, MdHome } from "react-icons/md"
+import '../styles/Breadcrumbs.css'
 
 const Breadcrumbs = ({ path, onNavigate }) => {
     return (
@@ -19,7 +19,7 @@ const Breadcrumbs = ({ path, onNavigate }) => {
                 </div>
             ))}
         </nav>
-    );
-};
+    )
+}
 
-export default Breadcrumbs;
+export default Breadcrumbs

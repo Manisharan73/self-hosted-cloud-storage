@@ -18,8 +18,8 @@ const Sidebar = ({ isDarkMode, toggleTheme }) => {
         navigate('/login-signup', { replace: true })
     }
 
-    const { notifications } = useNotifications();
-    const receivedCount = notifications.received.length;
+    const { notifications } = useNotifications()
+    const receivedCount = notifications.received.length
 
     return (<>
         <aside className="sidebar">

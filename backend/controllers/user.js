@@ -7,22 +7,22 @@ async function sharedItem(req, res) {
         const { itemId, itemType, sharedWithUserId, permission } = req.body
 
         if (!itemId || !itemType || !sharedWithUserId) {
-            return res.status(400).json({ msg: "Missing required fields" });
+            return res.status(400).json({ msg: "Missing required fields" })
         }
 
         if (sharedWithUserId == req.user.id) {
-            return res.status(400).json({ msg: "You cannot share an item with yourself" });
+            return res.status(400).json({ msg: "You cannot share an item with yourself" })
         }
 
         const Model = itemType.toLowerCase() === 'file' ? File : Folder
         const item = await Model.findByPk(itemId)
 
         if (!item) {
-            return res.status(404).json({ msg: "Item not found" });
+            return res.status(404).json({ msg: "Item not found" })
         }
 
         if (item.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "You don't have permission to share this item" });
+            return res.status(403).json({ msg: "You don't have permission to share this item" })
         }
 
         const [share, created] = await SharedItem.findOrCreate({
@@ -40,9 +40,9 @@ async function sharedItem(req, res) {
         })
 
         if (!created) {
-            share.status = 'active';
-            share.permission = permission || 'read';
-            await share.save();
+            share.status = 'active'
+            share.permission = permission || 'read'
+            await share.save()
         }
 
         res.status(201).json({ 
@@ -199,7 +199,7 @@ async function listPendingNotifications(req, res) {
 
 async function declineShare(req, res) {
     try {
-        const { shareId } = req.params;
+        const { shareId } = req.params
 
         const share = await SharedItem.findOne({
             where: {
@@ -207,18 +207,18 @@ async function declineShare(req, res) {
                 sharedWith: req.user.id,
                 status: 'active'
             }
-        });
+        })
 
         if (!share) {
-            return res.status(404).json({ msg: "Share record not found or already handled" });
+            return res.status(404).json({ msg: "Share record not found or already handled" })
         }
 
-        await share.destroy();
+        await share.destroy()
 
-        res.json({ msg: "Invitation declined successfully" });
+        res.json({ msg: "Invitation declined successfully" })
     } catch (err) {
-        console.error("Decline share error:", err);
-        res.status(500).json({ error: err.message });
+        console.error("Decline share error:", err)
+        res.status(500).json({ error: err.message })
     }
 }
 

@@ -23,8 +23,14 @@ app.use(cookieParser())
 const sequelize = require('./sequelize')
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://100.116.29.119:5173' ],
-    credentials: true
+    origin: [
+        'http://localhost:5173', 
+        'http://100.116.29.119:5173',
+        'http://100.76.246.47:5173' 
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
 async function initDb() {

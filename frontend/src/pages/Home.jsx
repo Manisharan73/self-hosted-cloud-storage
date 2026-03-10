@@ -6,11 +6,11 @@ import Sidebar from '../components/Sidebar'
 import axios from 'axios'
 import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
-import { MdContentPaste } from "react-icons/md"
-import { IoClose } from "react-icons/io5"
+import { useTheme } from '../context/ThemeContext'
 
 const Home = () => {
-    const [isDarkMode, setIsDarkMode] = useState(true)
+    const { isDarkMode } = useTheme()
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [items, setItems] = useState([])
     const [parentFolderId, setParentFolderId] = useState(null)
@@ -107,7 +107,7 @@ const Home = () => {
                                 <span className="btn-text">{isUploading ? `${uploadProgress}%` : "Upload"}</span>
                             </button>
                             <button className='upload-btn secondary' onClick={() => setPopUp("folder")}>
-                                <MdOutlineFolder /> <span className="btn-text">New</span>
+                                <MdOutlineFolder /> <span className="btn-text">Create Folder</span>
                             </button>
                         </div>
                     </header>

@@ -6,6 +6,7 @@ import Notifications from './pages/Notifications'
 import Trash from './pages/Trash'
 import Shared from './pages/Shared'
 import { NotificationProvider } from './context/NotificationContext'
+import { ThemeProvider } from './context/ThemeContext'
 
 function App() {
     const ProtectedRoute = ({ children }) => {
@@ -20,18 +21,20 @@ function App() {
 
     return (
         <>
-            <NotificationProvider>
-                <Router>
-                    <Routes>
-                        <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                        <Route path='/login-signup' element={<Login_SignUp />} />
-                        <Route path='/notifications' element={<Notifications />} />
-                        <Route path='/trash' element={<Trash />} />
-                        <Route path='/shared' element={<Shared />} />
-                        <Route path='*' element={<Navigate to='/' replace />} />
-                    </Routes>
-                </Router>
-            </NotificationProvider>
+            <ThemeProvider>
+                <NotificationProvider>
+                    <Router>
+                        <Routes>
+                            <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                            <Route path='/login-signup' element={<Login_SignUp />} />
+                            <Route path='/notifications' element={<Notifications />} />
+                            <Route path='/trash' element={<Trash />} />
+                            <Route path='/shared' element={<Shared />} />
+                            <Route path='*' element={<Navigate to='/' replace />} />
+                        </Routes>
+                    </Router>
+                </NotificationProvider>
+            </ThemeProvider>
         </>
     )
 }

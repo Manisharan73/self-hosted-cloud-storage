@@ -2,23 +2,27 @@ import React from 'react'
 import '../styles/Sidebar.css'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FaHome, FaBell } from "react-icons/fa"
-import { IoPerson, IoClose } from "react-icons/io5" // Added IoClose
+import { IoPerson, IoClose } from "react-icons/io5" 
 import { FaTrashCan } from "react-icons/fa6"
 import { LuLogOut } from "react-icons/lu"
 import { MdDarkMode, MdLightMode } from "react-icons/md"
 import { useNotifications } from '../context/NotificationContext'
 import { GoDotFill } from "react-icons/go";
+import { useTheme } from "../context/ThemeContext"
+import Cookies from "js-cookie"
 
-const Sidebar = ({ isDarkMode, toggleTheme, isOpen, setIsOpen }) => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
     const navigate = useNavigate()
     const location = useLocation()
+
+    const { isDarkMode, toggleTheme } = useTheme()
 
     const isActive = (path) => location.pathname === path ? 'active' : ''
 
     const handleNavigation = (path) => {
         navigate(path)
         if (window.innerWidth <= 768) {
-            setIsOpen(false) // Close sidebar after clicking on mobile
+            setIsOpen(false)
         }
     }
 

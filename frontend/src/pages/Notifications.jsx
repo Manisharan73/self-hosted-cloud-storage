@@ -5,9 +5,11 @@ import axios from "axios"
 import { IoMailOpenOutline, IoSendOutline, IoCheckmark, IoClose, IoTrashOutline } from "react-icons/io5"
 import { FaBars } from 'react-icons/fa' 
 import { useNotifications } from "../context/NotificationContext"
+import { useTheme } from "../context/ThemeContext"
 
 const Notifications = () => {
-    const [isDarkMode, setIsDarkMode] = useState(true)
+    const { isDarkMode } = useTheme()
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Added for responsiveness
     const [activeTab, setActiveTab] = useState('received')
     

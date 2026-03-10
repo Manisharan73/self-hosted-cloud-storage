@@ -4,8 +4,11 @@ import axios from 'axios'
 import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
 import { FaSearch, FaBars } from 'react-icons/fa'
+import { useTheme } from '../context/ThemeContext'
+
 const Trash = () => {
-    const [isDarkMode, setIsDarkMode] = useState(true)
+    const { isDarkMode } = useTheme()
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [items, setItems] = useState([])
     const [selectedItem, setSelectedItem] = useState(null)

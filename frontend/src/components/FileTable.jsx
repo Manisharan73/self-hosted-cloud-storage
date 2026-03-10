@@ -38,6 +38,7 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                     responseType: "blob"
                 });
                 const url = URL.createObjectURL(res.data);
+                window.open(url)
                 setPreviewUrl(url);
                 setPreviewType(res.data.type);
             } catch (err) {
@@ -88,7 +89,7 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                         <tr
                             key={item.id}
                             onDoubleClick={() => onDoubleCLickHandler(item)}
-                            onClick={() => onSelect && onSelect(item)}
+                            // onClick={() => onSelect && onSelect(item)}
                             className={`table-row ${selectedId === item.id ? 'active' : ''}`}
                             onContextMenu={(e) => handleContextMenu(e, item)}
                         >

@@ -9,7 +9,6 @@ const Login_SignUp = () => {
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
-    // Theme state: Persists choice in localStorage
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('theme')
         return savedTheme === 'light' ? false : true

@@ -1,3 +1,15 @@
+.home-container {
+    --sidebar-bg: #f7f8fa;
+    --content-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --hover-bg: #eef2f7;
+    --card-bg: #ffffff;
+    --item-bg: #f9fafb;
+    --border-color: rgba(0, 0, 0, 0.08);
+    --primary-blue: #4c84ff;
+}
+
 .home-container.dark {
     --sidebar-bg: #1a1c1e;
     --content-bg: #121212;

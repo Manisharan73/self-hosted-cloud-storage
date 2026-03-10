@@ -427,3 +427,70 @@ section-title {
         display: none; 
     }
 }
+
+/* Breadcrumb Styles for Nimbus */
+.breadcrumb-wrapper {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 10px 0;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.crumb-link {
+    background: none;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--primary-blue);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.crumb-link:hover {
+    background-color: var(--hover-bg);
+    text-decoration: underline;
+}
+
+.crumb-active {
+    background: none;
+    border: none;
+    padding: 6px 10px;
+    color: var(--text-main);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: default;
+    display: flex;
+    align-items: center;
+}
+
+.crumb-separator {
+    color: var(--text-muted);
+    font-size: 12px;
+    user-select: none;
+    opacity: 0.6;
+}
+
+/* Specific mobile adjustment for breadcrumbs */
+@media (max-width: 768px) {
+    .breadcrumb-wrapper {
+        font-size: 13px;
+        padding: 5px 0;
+    }
+    
+    .crumb-link, .crumb-active {
+        padding: 4px 6px;
+    }
+}

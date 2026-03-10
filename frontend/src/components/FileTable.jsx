@@ -20,6 +20,7 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                 setCurrentFolderId(item.id)
                 return
             }else if(view === 'shared'){
+                
                 setCurrentFolderId(item.id)
                 return
             }

@@ -229,64 +229,99 @@ async function declineShare(req, res) {
 
 async function listTrash(req, res) {
     try {
-        const { id } = req.query
-        let currentFolder = null
-        let filteredFolders = []
-        let filteredFiles = []
+        const { id } = req.query;
+        let currentFolder = null;
+        let filteredFolders = [];
+        let filteredFiles = [];
+        let breadcrumbPath = [];
 
         if (!id || id === "root") {
+
             const [folders, files] = await Promise.all([
-                Folder.findAll({ 
+                Folder.findAll({
                     where: { ownerId: req.user.id, isTrashed: true },
                     include: [{ model: Folder, as: 'parentFolder', required: false }]
                 }),
-                File.findAll({ 
+                File.findAll({
                     where: { ownerId: req.user.id, isTrashed: true },
                     include: [{ model: Folder, as: 'parentFolder', required: false }]
                 })
-            ])
+            ]);
 
-            filteredFolders = folders.filter(f => !f.parentFolder || !f.parentFolder.isTrashed)
-            filteredFiles = files.filter(f => !f.parentFolder || !f.parentFolder.isTrashed)
+            filteredFolders = folders.filter(f => !f.parentFolder || !f.parentFolder.isTrashed);
+            filteredFiles = files.filter(f => !f.parentFolder || !f.parentFolder.isTrashed);
+
+            breadcrumbPath = [{ id: "root", name: "Trash" }];
 
         } else {
-            currentFolder = await Folder.findByPk(id)
+
+            currentFolder = await Folder.findByPk(id);
 
             if (!currentFolder || currentFolder.ownerId !== req.user.id) {
-                return res.status(404).json({ msg: "Folder not found" })
+                return res.status(404).json({ msg: "Folder not found" });
             }
 
             [filteredFolders, filteredFiles] = await Promise.all([
-                Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: id } }),
-                File.findAll({ where: { ownerId: req.user.id, parentFolderId: id } })
-            ])
+                Folder.findAll({
+                    where: { ownerId: req.user.id, parentFolderId: id }
+                }),
+                File.findAll({
+                    where: { ownerId: req.user.id, parentFolderId: id }
+                })
+            ]);
+
+            // breadcrumb generation
+            let currentId = id;
+
+            while (currentId) {
+                const folder = await Folder.findByPk(currentId);
+
+                if (!folder || folder.ownerId !== req.user.id) break;
+
+                if (folder.name !== "root") {
+                    breadcrumbPath.unshift({
+                        id: folder.id,
+                        name: folder.name
+                    })
+                }
+
+                currentId = folder.parentFolderId;
+            }
+
+            breadcrumbPath.unshift({
+                id: "root",
+                name: "Trash"
+            });
         }
 
         const combinedData = [
-            ...filteredFolders.map(f => ({ 
-                id: f.id, 
-                name: f.name, 
-                type: 'Folder', 
-                size: '---', 
-                date: f.deletedAt || f.updatedAt 
+            ...filteredFolders.map(f => ({
+                id: f.id,
+                name: f.name,
+                type: 'Folder',
+                size: '---',
+                date: f.deletedAt || f.updatedAt
             })),
-            ...filteredFiles.map(f => ({ 
-                id: f.id, 
-                name: f.originalFilename, 
-                type: 'File', 
-                size: f.size, 
-                date: f.deletedAt || f.updatedAt 
+            ...filteredFiles.map(f => ({
+                id: f.id,
+                name: f.originalFilename,
+                type: 'File',
+                size: f.size,
+                date: f.deletedAt || f.updatedAt
             }))
-        ]
+        ];
 
-        let backId = null
+        let backId = null;
+
         if (id && id !== "root") {
-            const parent = currentFolder.parentFolderId ? await Folder.findByPk(currentFolder.parentFolderId) : null
-            
+            const parent = currentFolder.parentFolderId
+                ? await Folder.findByPk(currentFolder.parentFolderId)
+                : null;
+
             if (!parent || !parent.isTrashed) {
-                backId = "root"
+                backId = "root";
             } else {
-                backId = parent.id
+                backId = parent.id;
             }
         }
 
@@ -295,11 +330,13 @@ async function listTrash(req, res) {
             currentFolder: {
                 id: id || "root",
                 parentFolderId: backId
-            }
-        })
-    } catch(err) {
-        console.error("Trash Fetch Error:", err)
-        res.status(500).json({ error: err.message })
+            },
+            path: breadcrumbPath
+        });
+
+    } catch (err) {
+        console.error("Trash Fetch Error:", err);
+        res.status(500).json({ error: err.message });
     }
 }
 

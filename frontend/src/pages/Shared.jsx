@@ -63,6 +63,7 @@ const Shared = () => {
                         <FileTable 
                             data={items} 
                             selectedItem={selectedItem} 
+                            setCurrentFolderId={setCurrentFolderId}
                             onSelect={setSelectedItem} 
                             refreshFiles={fetchShared} 
                             view="shared" 

@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../sequelize')
-const Folder = require('./folder') // Import Folder for association
+const Folder = require('./folder')
 
 const File = sequelize.define(
     'File',
@@ -25,7 +25,7 @@ const File = sequelize.define(
         mimetype: DataTypes.STRING,
         parentFolderId: {
             type: DataTypes.INTEGER,
-            allowNull: true, // Changed to true to allow root-level or flexible restoration
+            allowNull: true, 
             references: {
                 model: 'folders',
                 key: 'id'
@@ -49,9 +49,5 @@ const File = sequelize.define(
 )
 
 File.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' })
-File.belongsTo(User, { 
-    as: 'owner', 
-    foreignKey: 'ownerId' 
-})
 
 module.exports = File

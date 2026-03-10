@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import '../styles/Home.css'
-import { MdOutlineFileUpload, MdOutlineFolder } from "react-icons/md"
-import { FaSearch, FaBars } from 'react-icons/fa' // Added FaBars
+import { MdOutlineFileUpload, MdOutlineFolder, MdHome } from "react-icons/md"
+import { FaSearch, FaBars } from 'react-icons/fa'
 import Sidebar from '../components/Sidebar'
 import axios from 'axios'
 import FileTable from '../components/FileTable'
@@ -19,6 +19,8 @@ const Home = () => {
     const [uploadProgress, setUploadProgress] = useState(0)
     const [isUploading, setIsUploading] = useState(false)
     const [popUp, setPopUp] = useState(null)
+    const [breadcrumbs, setBreadcrumbs] = useState([])
+
     const [clipboard, setClipboard] = useState(() => {
         const saved = localStorage.getItem("clipboard")
         try {
@@ -43,9 +45,12 @@ const Home = () => {
         }
     }, [])
 
+    useEffect(() => { setCurrentFolderId("root") }, [])
+
     useEffect(() => {
-        refreshFiles("root")
-    }, [])
+        if (!currentFolderID) return
+        refreshFiles(currentFolderID)
+    }, [currentFolderID])
 
     const refreshFiles = async (folderId) => {
         const id = folderId ?? "root"
@@ -54,6 +59,7 @@ const Home = () => {
             setItems(res.data?.combinedData)
             setParentFolderId(res.data?.currentFolder?.parentFolderId)
             setCurrentFolderId(res.data?.currentFolder?.id)
+            setBreadcrumbs(res.data?.path || [])
         } catch (err) { console.error(err) }
     }
 
@@ -103,7 +109,7 @@ const Home = () => {
                         <div className="header-actions">
                             <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />
                             <button className="upload-btn" onClick={() => document.getElementById('file-upload').click()} disabled={isUploading}>
-                                <MdOutlineFileUpload /> 
+                                <MdOutlineFileUpload />
                                 <span className="btn-text">{isUploading ? `${uploadProgress}%` : "Upload"}</span>
                             </button>
                             <button className='upload-btn secondary' onClick={() => setPopUp("folder")}>
@@ -114,7 +120,28 @@ const Home = () => {
 
                     <section className="section-container">
                         <div className="section-header">
-                            <h2 className='text-xl font-bold'>My Storage</h2>
+                            <div className="breadcrumb-wrapper">
+                                {breadcrumbs.map((crumb, index) => (
+                                    <span key={crumb.id} className="breadcrumb-item">
+                                        <button
+                                            onClick={() => setCurrentFolderId(crumb.id)}
+                                            className={
+                                                index === breadcrumbs.length - 1
+                                                    ? 'crumb-active'
+                                                    : 'crumb-link'
+                                            }
+                                        >
+                                            {index === 0
+                                                ? <MdHome style={{ marginBottom: '-3px' }} />
+                                                : null}
+                                            {crumb.name}
+                                        </button>
+
+                                        {index < breadcrumbs.length - 1 &&
+                                            <span className="crumb-separator">/</span>}
+                                    </span>
+                                ))}
+                            </div>
                             <button onClick={() => refreshFiles(parentFolderId)} className="back-btn">← Back</button>
                         </div>
 

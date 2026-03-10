@@ -41,63 +41,6 @@ async function uploadFile(req, res) {
     }
 }
 
-async function listFiles(req, res) {
-    try {
-        let folderID = req.query.id
-
-        if (!req.user || !req.user.id) {
-            return res.status(401).json({ msg: "Unauthorized" })
-        }
-
-        if (folderID == "root") {
-            const root = await Folder.findOne({
-                where: { ownerId: req.user.id, parentFolderId: null }
-            })
-
-            if (!root) return res.status(404).json({ msg: "Root folder not found" })
-
-            folderID = root.id
-        }
-
-        const currentFolder = await Folder.findByPk(folderID)
-        if (!currentFolder) return res.status(404).json({ msg: "Folder does not exist" })
-
-        if (currentFolder.ownerId !== req.user.id)
-            return res.status(401).json({ msg: "Unauthorized access to this folder" })
-
-        const [files, folders] = await Promise.all([
-            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } }),
-            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } })
-        ])
-
-        const combinedData = [
-            ...folders.map(f => ({
-                id: f.id,
-                name: f.name,
-                type: 'Folder',
-                size: '---',
-                date: f.updatedAt,
-            })),
-            ...files.map(f => ({
-                id: f.id,
-                name: f.originalFilename,
-                type: 'File',
-                size: f.size,
-                date: f.updatedAt,
-            }))
-        ]
-
-        res.status(200).json({
-            combinedData, currentFolder,
-            msg: "Successful"
-        })
-    }
-    catch (err) {
-        console.error(err)
-        return res.status(500).json({ error: "DB error" })
-    }
-}
-
 async function downloadFile(req, res) {
     try {
         const file = await File.findByPk(req.params.id)
@@ -260,6 +203,90 @@ async function restoreItem(req, res) {
     }
 }
 
+async function getFolderPath(folderID, userId) {
+    const path = [];
+    let currentId = folderID;
+
+    while (currentId) {
+        const folder = await Folder.findByPk(currentId, {
+            attributes: ['id', 'name', 'parentFolderId', 'ownerId']
+        });
+
+        if (!folder || folder.ownerId !== userId) break;
+
+        path.unshift({
+            id: folder.id,
+            name: folder.name === 'root' ? 'My Storage' : folder.name
+        });
+
+        currentId = folder.parentFolderId;
+    }
+
+    return path;
+}
+
+async function listFiles(req, res) {
+    try {
+        let folderID = req.query.id
+        const viewingTrash = req.query.view === 'trash'
+
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ msg: "Unauthorized" })
+        }
+
+        if (folderID == "root") {
+            const root = await Folder.findOne({
+                where: { ownerId: req.user.id, parentFolderId: null }
+            })
+
+            if (!root) return res.status(404).json({ msg: "Root folder not found" })
+
+            folderID = root.id
+        }
+
+        const [currentFolder, pathTrail] = await Promise.all([
+            Folder.findByPk(folderID),
+            getFolderPath(folderID, req.user.id)
+        ])
+
+        if (!currentFolder) return res.status(404).json({ msg: "Folder does not exist" })
+
+        if (currentFolder.ownerId !== req.user.id)
+            return res.status(401).json({ msg: "Unauthorized access to this folder" })
+
+        const [files, folders] = await Promise.all([
+            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: viewingTrash } }),
+            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: viewingTrash } })
+        ])
+
+        const combinedData = [
+            ...folders.map(f => ({
+                id: f.id,
+                name: f.name,
+                type: 'Folder',
+                size: '---',
+                date: f.updatedAt,
+            })),
+            ...files.map(f => ({
+                id: f.id,
+                name: f.originalFilename,
+                type: 'File',
+                size: f.size,
+                date: f.updatedAt,
+            }))
+        ]
+
+        res.status(200).json({
+            combinedData, currentFolder, path: pathTrail,
+            msg: "Successful"
+        })
+    }
+    catch (err) {
+        console.error(err)
+        return res.status(500).json({ error: "DB error" })
+    }
+}
+
 module.exports = {
     uploadFile,
     listFiles,
@@ -270,5 +297,6 @@ module.exports = {
     deleteMultipleFiles,
     renameFile,
     moveToTrash,
-    restoreItem
+    restoreItem,
+    getFolderPath
 }

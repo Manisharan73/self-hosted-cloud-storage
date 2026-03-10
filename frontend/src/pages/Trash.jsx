@@ -14,6 +14,7 @@ const Trash = () => {
     const [selectedItem, setSelectedItem] = useState(null)
     const [currentFolderId, setCurrentFolderId] = useState("root")
     const [parentFolderId, setParentFolderId] = useState(null)
+    const [breadcrumbs, setBreadcrumbs] = useState([])
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
@@ -24,6 +25,7 @@ const Trash = () => {
             })
             setItems(res.data?.combinedData)
             setParentFolderId(res.data?.currentFolder?.parentFolderId)
+            setBreadcrumbs(res.data?.path || [])
         } catch (err) {
             console.error(err)
         }
@@ -45,16 +47,16 @@ const Trash = () => {
 
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
-            <div 
-                className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+            <div
+                className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
                 onClick={() => setIsSidebarOpen(false)}
             ></div>
 
-            <Sidebar 
-                isDarkMode={isDarkMode} 
-                toggleTheme={toggleTheme} 
-                isOpen={isSidebarOpen} 
-                setIsOpen={setIsSidebarOpen} 
+            <Sidebar
+                isDarkMode={isDarkMode}
+                toggleTheme={toggleTheme}
+                isOpen={isSidebarOpen}
+                setIsOpen={setIsSidebarOpen}
             />
 
             <main className="main-content flex-row">
@@ -72,8 +74,27 @@ const Trash = () => {
                     </header>
 
                     <section className="section-container">
-                        <div className="section-header flex justify-between items-center mb-4">
-                            <h2 className='text-xl font-bold'>Trash</h2>
+                        <div className="section-header flex  items-center mb-4">
+                            <div className="breadcrumb-wrapper">
+                                {breadcrumbs.map((crumb, index) => (
+                                <span key={crumb.id} className="breadcrumb-item">
+                                    <button
+                                        onClick={() => setCurrentFolderId(crumb.id)}
+                                        className={
+                                            index === breadcrumbs.length - 1
+                                                ? 'crumb-active'
+                                                : 'crumb-link'
+                                        }
+                                    >
+                                        {crumb.name}
+                                    </button>
+
+                                    {index < breadcrumbs.length - 1 &&
+                                        <span className="crumb-separator">/</span>}
+                                </span>
+                            ))}
+                            </div>
+                            
                             {currentFolderId !== "root" && (
                                 <button onClick={handleBackClick} className="back-btn text-blue-500 hover:underline">
                                     ← Back

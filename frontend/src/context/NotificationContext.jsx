@@ -18,15 +18,15 @@ export const NotificationProvider = ({ children }) => {
         }
     }
 
-    useEffect(() => {
-        fetchData()
+    // useEffect(() => {
+    //     fetchData()
 
-        const interval = setInterval(() => {
-            fetchData()
-        }, 30000)
+    //     const interval = setInterval(() => {
+    //         fetchData()
+    //     }, 30000)
 
-        return () => clearInterval(interval)
-    }, [])
+    //     return () => clearInterval(interval)
+    // }, [])
 
     return (
         <NotificationContext.Provider value={{ notifications, setNotifications, fetchData, loading }}>

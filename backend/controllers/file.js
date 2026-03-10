@@ -66,8 +66,8 @@ async function listFiles(req, res) {
             return res.status(401).json({ msg: "Unauthorized access to this folder" })
 
         const [files, folders] = await Promise.all([
-            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: viewingTrash } }),
-            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: viewingTrash } })
+            File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } }),
+            Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } })
         ])
 
         const combinedData = [

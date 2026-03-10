@@ -17,61 +17,63 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
     const onDoubleCLickHandler = async (item) => {
         if (item.type === "Folder") {
             if (view === "trash") {
-                if (typeof setCurrentFolderId === "function") {
-                    setCurrentFolderId(item.id);
-                }
-                return;
+                setCurrentFolderId(item.id)
+                return
+            }else if(view === 'shared'){
+                setCurrentFolderId(item.id)
+                return
             }
-
+            console.log(currentFolderID, item.id)
             try {
-                const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${item.id}`, { withCredentials: true });
-                if (typeof setItems === "function") setItems(res.data?.combinedData);
-                if (typeof setParentFolderId === "function") setParentFolderId(res.data?.currentFolder?.parentFolderId);
-                if (typeof setCurrentFolderId === "function") setCurrentFolderId(res.data?.currentFolder?.id);
+                const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${item.id}`, { withCredentials: true })
+                console.log(res.data)
+                setItems(res.data?.combinedData)
+                setParentFolderId(res.data?.currentFolder?.parentFolderId)
+                setCurrentFolderId(res.data?.currentFolder?.id)
             } catch (err) {
-                console.error("Failed to open folder", err);
+                console.error("Failed to open folder", err)
             }
         } else {
             try {
                 const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/download/${item?.id}`, {
                     withCredentials: true,
                     responseType: "blob"
-                });
-                const url = URL.createObjectURL(res.data);
+                })
+                const url = URL.createObjectURL(res.data)
                 window.open(url)
-                setPreviewUrl(url);
-                setPreviewType(res.data.type);
+                setPreviewUrl(url)
+                setPreviewType(res.data.type)
             } catch (err) {
-                console.error("Download failed", err);
+                console.error("Download failed", err)
             }
         }
-    };
+    }
 
     const formatDate = (dateString) => {
-        if (!dateString) return '---';
-        const d = new Date(dateString);
+        if (!dateString) return '---'
+        const d = new Date(dateString)
         return d.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric'
-        }) + ' • ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }) + ' • ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
     const formatSize = (size) => {
-        if (size === '---' || !size) return '---';
-        if (size < 1024) return `${size} B`;
-        if (size < 1048576) return `${(size / 1024).toFixed(1)} KB`;
-        return `${(size / 1048576).toFixed(1)} MB`;
+        if (size === '---' || !size) return '---'
+        if (size < 1024) return `${size} B`
+        if (size < 1048576) return `${(size / 1024).toFixed(1)} KB`
+        return `${(size / 1048576).toFixed(1)} MB`
     }
 
     const handleContextMenu = (e, item) => {
-        e.preventDefault();
+        e.preventDefault()
         setContextMenu({
             show: true,
             x: Math.min(e.clientX, window.innerWidth - 300),
             y: Math.min(e.clientY, window.innerHeight - 350)
-        });
-        setSelectedItem(item);
+        })
+        setSelectedItem(item)
     }
 
     return (

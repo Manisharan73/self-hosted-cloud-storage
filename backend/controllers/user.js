@@ -229,10 +229,10 @@ async function declineShare(req, res) {
 
 async function listTrash(req, res) {
     try {
-        const { id } = req.query;
-        let currentFolder = null;
-        let filteredFolders = [];
-        let filteredFiles = [];
+        const { id } = req.query
+        let currentFolder = null
+        let filteredFolders = []
+        let filteredFiles = []
 
         if (!id || id === "root") {
             const [folders, files] = await Promise.all([
@@ -244,22 +244,22 @@ async function listTrash(req, res) {
                     where: { ownerId: req.user.id, isTrashed: true },
                     include: [{ model: Folder, as: 'parentFolder', required: false }]
                 })
-            ]);
+            ])
 
-            filteredFolders = folders.filter(f => !f.parentFolder || !f.parentFolder.isTrashed);
-            filteredFiles = files.filter(f => !f.parentFolder || !f.parentFolder.isTrashed);
+            filteredFolders = folders.filter(f => !f.parentFolder || !f.parentFolder.isTrashed)
+            filteredFiles = files.filter(f => !f.parentFolder || !f.parentFolder.isTrashed)
 
         } else {
-            currentFolder = await Folder.findByPk(id);
+            currentFolder = await Folder.findByPk(id)
 
             if (!currentFolder || currentFolder.ownerId !== req.user.id) {
-                return res.status(404).json({ msg: "Folder not found" });
+                return res.status(404).json({ msg: "Folder not found" })
             }
 
             [filteredFolders, filteredFiles] = await Promise.all([
                 Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: id } }),
                 File.findAll({ where: { ownerId: req.user.id, parentFolderId: id } })
-            ]);
+            ])
         }
 
         const combinedData = [
@@ -277,16 +277,16 @@ async function listTrash(req, res) {
                 size: f.size, 
                 date: f.deletedAt || f.updatedAt 
             }))
-        ];
+        ]
 
-        let backId = null;
+        let backId = null
         if (id && id !== "root") {
-            const parent = currentFolder.parentFolderId ? await Folder.findByPk(currentFolder.parentFolderId) : null;
+            const parent = currentFolder.parentFolderId ? await Folder.findByPk(currentFolder.parentFolderId) : null
             
             if (!parent || !parent.isTrashed) {
-                backId = "root";
+                backId = "root"
             } else {
-                backId = parent.id;
+                backId = parent.id
             }
         }
 
@@ -296,10 +296,10 @@ async function listTrash(req, res) {
                 id: id || "root",
                 parentFolderId: backId
             }
-        });
+        })
     } catch(err) {
-        console.error("Trash Fetch Error:", err);
-        res.status(500).json({ error: err.message });
+        console.error("Trash Fetch Error:", err)
+        res.status(500).json({ error: err.message })
     }
 }
 
@@ -348,6 +348,107 @@ async function sharedDownload(req, res) {
     }
 }
 
+async function listShared(req, res) {
+    try {
+        const { id } = req.query
+        let currentFolder = null
+        let sharedFolders = []
+        let sharedFiles = []
+        let backId = null
+
+        if (!id || id === "root") {
+            const sharedItems = await SharedItem.findAll({
+                where: { sharedWith: req.user.id }
+            })
+
+            const folderIds = sharedItems
+                .filter(item => item.itemType.toLowerCase() === 'folder')
+                .map(item => item.itemId)
+                
+            const fileIds = sharedItems
+                .filter(item => item.itemType.toLowerCase() === 'file')
+                .map(item => item.itemId)
+
+            if (folderIds.length > 0) {
+                sharedFolders = await Folder.findAll({
+                    where: { id: folderIds, isTrashed: false },
+                    include: [{ model: User, as: 'owner', attributes: ['name', 'uniqueName'] }]
+                })
+            }
+
+            if (fileIds.length > 0) {
+                sharedFiles = await File.findAll({
+                    where: { id: fileIds, isTrashed: false },
+                    include: [{ model: User, as: 'owner', attributes: ['name', 'uniqueName'] }]
+                })
+            }
+
+            backId = null 
+        } 
+        
+        else {
+            currentFolder = await Folder.findByPk(id)
+
+            if (!currentFolder || currentFolder.isTrashed) {
+                return res.status(404).json({ msg: "Folder not found or is in trash" })
+            }
+
+            [sharedFolders, sharedFiles] = await Promise.all([
+                Folder.findAll({ 
+                    where: { parentFolderId: id, isTrashed: false },
+                    include: [{ model: User, as: 'owner', attributes: ['name'] }]
+                }),
+                File.findAll({ 
+                    where: { parentFolderId: id, isTrashed: false },
+                    include: [{ model: User, as: 'owner', attributes: ['name'] }]
+                })
+            ])
+
+            const explicitlyShared = await SharedItem.findOne({
+                where: { itemId: id, sharedWith: req.user.id }
+            })
+
+            if (explicitlyShared || !currentFolder.parentFolderId) {
+                backId = "root"
+            } else {
+                backId = currentFolder.parentFolderId
+            }
+        }
+
+        const combinedData = [
+            ...sharedFolders.map(f => ({ 
+                id: f.id, 
+                name: f.name, 
+                type: 'Folder', 
+                size: '---', 
+                date: f.updatedAt,
+                owner: f.owner ? f.owner.name : 'Unknown' 
+            })),
+            ...sharedFiles.map(f => ({ 
+                id: f.id, 
+                name: f.originalFilename, 
+                type: 'File', 
+                size: f.size, 
+                date: f.updatedAt,
+                owner: f.owner ? f.owner.name : 'Unknown'
+            }))
+        ]
+
+        res.status(200).json({
+            combinedData,
+            currentFolder: currentFolder ? {
+                id: currentFolder.id,
+                name: currentFolder.name,
+                parentFolderId: backId
+            } : { id: "root", parentFolderId: null }
+        })
+
+    } catch(err) {
+        console.error("Shared Fetch Error:", err)
+        res.status(500).json({ error: err.message })
+    }
+}
+
 module.exports = {
     sharedItem,
     revokeShare,
@@ -356,5 +457,6 @@ module.exports = {
     listPendingNotifications,
     declineShare,
     listTrash,
-    sharedDownload
+    sharedDownload,
+    listShared
 }

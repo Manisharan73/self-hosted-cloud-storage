@@ -26,7 +26,8 @@ app.use(cors({
     origin: [
         'http://localhost:5173', 
         'http://100.116.29.119:5173',
-        'http://100.76.246.47:5173' 
+        'http://100.76.246.47:5173',
+        'https://self-hosted-cloud-storage-p6j711cvy.vercel.app' 
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

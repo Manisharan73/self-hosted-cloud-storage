@@ -21,18 +21,18 @@ const Trash = () => {
         try {
             const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listTrash?id=${folderId}`, {
                 withCredentials: true
-            });
-            setItems(res.data?.combinedData);
-            setParentFolderId(res.data?.currentFolder?.parentFolderId);
+            })
+            setItems(res.data?.combinedData)
+            setParentFolderId(res.data?.currentFolder?.parentFolderId)
         } catch (err) {
-            console.error(err);
+            console.error(err)
         }
     }
 
     useEffect(() => {
-        setItems([]);
-        fetchTrash(currentFolderId);
-    }, [currentFolderId]);
+        setItems([])
+        fetchTrash(currentFolderId)
+    }, [currentFolderId])
 
     const handleBackClick = () => {
         if (parentFolderId && parentFolderId !== "root") {

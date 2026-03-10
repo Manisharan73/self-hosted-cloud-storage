@@ -12,30 +12,27 @@ const Shared = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [items, setItems] = useState([])
     const [selectedItem, setSelectedItem] = useState(null)
+    const [currentFolderId, setCurrentFolderId] = useState("root")
+    const [parentFolderId, setParentFolderId] = useState(null)
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
-    const fetchShared = async () => {
+    const fetchShared = async (folderId = "root") => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/shared-with-me`, { withCredentials: true })
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listShared?id=${folderId}`, {
+                withCredentials: true
+            })
             setItems(res.data?.combinedData)
-        } catch (err) { console.error(err) }
+            setParentFolderId(res.data?.currentFolder?.parentFolderId)
+        } catch (err) {
+            console.error(err)
+        }
     }
 
-    // const refreshFiles = async (folderId) => {
-    //     const id = folderId ?? "root"
-
-    //     const res = await axios.get(
-    //         `${import.meta.env.VITE_BACKEND}/file/list?id=${id}`,
-    //         { withCredentials: true }
-    //     )
-
-    //     setItems(res.data?.combinedData)
-    //     setParentFolderId(res.data?.currentFolder?.parentFolderId)
-    //     setCurrentFolderId(res.data?.currentFolder?.id)
-    // }
-
-    useEffect(() => { fetchShared() }, [])
+    useEffect(() => {
+        setItems([])
+        fetchShared(currentFolderId)
+    }, [currentFolderId])
 
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>

@@ -120,6 +120,9 @@ const Home = () => {
 
                         <FileTable
                             data={items}
+                            setItems={setItems}
+                            setCurrentFolderId={setCurrentFolderId}
+                            setParentFolderId={setParentFolderId}
                             selectedId={selectedItem?.id}
                             onSelect={setSelectedItem}
                             selectedItem={selectedItem}

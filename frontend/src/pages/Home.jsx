@@ -8,6 +8,7 @@ import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
 import { MdContentPaste } from "react-icons/md"
 import { IoClose } from "react-icons/io5"
+import Cookies from "js-cookie"
 
 const Home = () => {
     const [isDarkMode, setIsDarkMode] = useState(true)
@@ -47,7 +48,8 @@ const Home = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const res = await axios.get('/api/file/list?id=root')
+            // console.log(Cookies.get("token"))
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=root`, {withCredentials: true})
             // console.log(res.data)
             setItems(res.data?.combinedData)
             setParentFolderId(res.data?.currentFolder?.parentFolderId)

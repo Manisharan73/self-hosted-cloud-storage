@@ -8,7 +8,7 @@ export default defineConfig({
         // This proxy tells Vite: "If a request starts with /api, forward it to the backend"
         proxy: {
             '/api': {
-                target: 'http://100.76.246.47:3001', // Your backend IP
+                target: 'https://storagecloud.agdivya.xyz', // Your backend IP
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, '')
             }

@@ -32,12 +32,12 @@ const Notifications = () => {
             setNotifications(prev => ({
                 received: prev.received.filter(n => n.shareId !== shareId),
                 sent: prev.sent.filter(n => n.shareId !== shareId)
-            }));
+            }))
         } catch (err) {
-            console.error("Action error:", err);
-            alert(err.response?.data?.msg || "Failed to process request");
+            console.error("Action error:", err)
+            alert(err.response?.data?.msg || "Failed to process request")
         }
-    };
+    }
 
     return (
         <div className={`notif-container ${isDarkMode ? 'dark' : ''}`}>

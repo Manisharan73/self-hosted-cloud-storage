@@ -109,7 +109,8 @@ const FileContextMenu = ({
             ) : (
                 <>
                     {selectedItem.type === "File" && <button onClick={downloadHandler}>Download</button>}
-                    <button onClick={() => { closeContextMenu(); setPopUp("share"); }}>Share</button>
+                    <button onClick={() => { closeContextMenu()
+                         setPopUp("share") }}>Share</button>
                     <button onClick={handleRename}>Rename</button>
                     <button onClick={handleDetails}>Details</button>
                     <button onClick={handleCopy}>Copy</button>

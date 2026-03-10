@@ -8,7 +8,8 @@ const {
     listSharedWithMe,
     listPendingNotifications,
     declineShare,
-    listTrash
+    listTrash,
+    sharedDownload
 } = require("../controllers/user")
 
 router.post("/share", sharedItem)
@@ -18,5 +19,6 @@ router.post("/share/save/:shareId", saveSharedItem)
 router.post("/share/decline/:shareId", declineShare)
 router.post("/share/revoke/:shareId", revokeShare)
 router.get("/listTrash", listTrash)
+router.get("/share/download/:fileId", sharedDownload)
 
 module.exports = router

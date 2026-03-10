@@ -1,28 +1,33 @@
 const File = require("../models/file")
 const Folder = require("../models/folder")
 const SharedItem = require("../models/sharedItem")
+const User = require("../models/user")
+const path = require("path")
+const axios = require("axios")
 
-async function sharedItem(req, res) { 
+const getUserDir = (uniqueName) => path.join(__dirname, "..", "uploads", uniqueName)
+
+async function sharedItem(req, res) {
     try {
         const { itemId, itemType, sharedWithUserId, permission } = req.body
 
         if (!itemId || !itemType || !sharedWithUserId) {
-            return res.status(400).json({ msg: "Missing required fields" });
+            return res.status(400).json({ msg: "Missing required fields" })
         }
 
         if (sharedWithUserId == req.user.id) {
-            return res.status(400).json({ msg: "You cannot share an item with yourself" });
+            return res.status(400).json({ msg: "You cannot share an item with yourself" })
         }
 
         const Model = itemType.toLowerCase() === 'file' ? File : Folder
         const item = await Model.findByPk(itemId)
 
         if (!item) {
-            return res.status(404).json({ msg: "Item not found" });
+            return res.status(404).json({ msg: "Item not found" })
         }
 
         if (item.ownerId !== req.user.id) {
-            return res.status(403).json({ msg: "You don't have permission to share this item" });
+            return res.status(403).json({ msg: "You don't have permission to share this item" })
         }
 
         const [share, created] = await SharedItem.findOrCreate({
@@ -40,16 +45,16 @@ async function sharedItem(req, res) {
         })
 
         if (!created) {
-            share.status = 'active';
-            share.permission = permission || 'read';
-            await share.save();
+            share.status = 'active'
+            share.permission = permission || 'read'
+            await share.save()
         }
 
-        res.status(201).json({ 
-            msg: created ? "Item shared successfully" : "Share permissions updated", 
-            share 
+        res.status(201).json({
+            msg: created ? "Item shared successfully" : "Share permissions updated",
+            share
         })
-    } catch(err) {
+    } catch (err) {
         res.status(500).json({ error: err.message })
     }
 }
@@ -65,11 +70,11 @@ async function revokeShare(req, res) {
             }
         })
 
-        if(!share) {
+        if (!share) {
             return res.status(404).json({ msg: "Share record not found" })
         }
 
-        if(!share.isSavedByRecipient) {
+        if (!share.isSavedByRecipient) {
             await share.destroy()
             return res.json({ msg: "Invitation Revoked" })
         } else {
@@ -77,7 +82,7 @@ async function revokeShare(req, res) {
             await share.save()
             return res.json({ msg: "Access Revoked" })
         }
-    } catch(err) {
+    } catch (err) {
         res.status(500).json({ error: err.message })
     }
 }
@@ -93,7 +98,7 @@ async function saveSharedItem(req, res) {
             }
         })
 
-        if(!share || share.status == 'revoked') {
+        if (!share || share.status == 'revoked') {
             return res.status(403).json({ msg: "Access unavailable" })
         }
 
@@ -101,14 +106,14 @@ async function saveSharedItem(req, res) {
         await share.save()
 
         res.json({ msg: "Item saved to your shared library" })
-    } catch(err) {
+    } catch (err) {
         res.status(500).json({ error: err.message })
     }
 }
 
 async function listSharedWithMe(req, res) {
     try {
-        if(!req.user || !req.user.id) {
+        if (!req.user || !req.user.id) {
             return res.status(401).json({ msg: "Unauthorized" })
         }
 
@@ -124,7 +129,7 @@ async function listSharedWithMe(req, res) {
             const Model = share.itemType == 'file' ? File : Folder
             const item = await Model.findByPk(share.itemId)
 
-            if(!item) {
+            if (!item) {
                 return null
             }
 
@@ -145,7 +150,7 @@ async function listSharedWithMe(req, res) {
             combinedData: filteredData,
             msg: "Shared items loaded successfully"
         })
-    } catch(err) {
+    } catch (err) {
         console.error(err)
         res.status(500).json({ error: "Failed to fetch shared items" })
     }
@@ -192,14 +197,14 @@ async function listPendingNotifications(req, res) {
         const sent = await formatNotifications(sentShares, 'sent')
 
         res.status(200).json({ received, sent })
-    } catch(err) {
+    } catch (err) {
         res.status(500).json({ error: err.message })
     }
 }
 
 async function declineShare(req, res) {
     try {
-        const { shareId } = req.params;
+        const { shareId } = req.params
 
         const share = await SharedItem.findOne({
             where: {
@@ -207,18 +212,18 @@ async function declineShare(req, res) {
                 sharedWith: req.user.id,
                 status: 'active'
             }
-        });
+        })
 
         if (!share) {
-            return res.status(404).json({ msg: "Share record not found or already handled" });
+            return res.status(404).json({ msg: "Share record not found or already handled" })
         }
 
-        await share.destroy();
+        await share.destroy()
 
-        res.json({ msg: "Invitation declined successfully" });
+        res.json({ msg: "Invitation declined successfully" })
     } catch (err) {
-        console.error("Decline share error:", err);
-        res.status(500).json({ error: err.message });
+        console.error("Decline share error:", err)
+        res.status(500).json({ error: err.message })
     }
 }
 
@@ -298,6 +303,51 @@ async function listTrash(req, res) {
     }
 }
 
+async function sharedDownload(req, res) {
+    try {
+        const { fileId } = req.params
+
+        if (!fileId) return res.status(400).json({ msg: "Enter a valid id" })
+
+        const file = await File.findByPk(fileId)
+        if (!file) return res.status(404).json({ msg: "File not found" })
+
+        const sharedItem = await SharedItem.findOne({ where: { itemId: fileId } })
+        if (!sharedItem) return res.status(404).json({ error: "No shared access" })
+
+        if (sharedItem.sharedWith !== req.user.id) {
+            return res.status(403).json({ msg: "Forbidden" })
+        }
+
+        const owner = await User.findByPk(file.ownerId)
+        if (!owner) return res.status(404).json({ msg: "File owner not found" })
+
+        const response = await axios.get(
+            `${process.env.STORAGE_URL}/download/${file.filename}`,
+            {
+                responseType: "stream",
+                params: {
+                    uniqueName: owner.uniqueName,
+                },
+            }
+        )
+
+        const fileName = encodeURIComponent(file.originalFilename)
+        res.setHeader("Content-Type", file.mimetype)
+        res.setHeader(
+            "Content-Disposition",
+            `attachment filename*=UTF-8''${fileName}`
+        )
+        res.setHeader("Cache-Control", "no-store")
+
+        response.data.pipe(res)
+
+    } catch (err) {
+        console.error("Shared Download Error:", err)
+        res.status(500).json({ error: "Download failed" })
+    }
+}
+
 module.exports = {
     sharedItem,
     revokeShare,
@@ -305,5 +355,6 @@ module.exports = {
     listSharedWithMe,
     listPendingNotifications,
     declineShare,
-    listTrash
+    listTrash,
+    sharedDownload
 }

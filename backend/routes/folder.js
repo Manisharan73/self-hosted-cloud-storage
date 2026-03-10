@@ -8,7 +8,7 @@ router.delete("/delete/:id", deleteFolder)
 router.post("/move", moveFolder)
 router.post("/copy", copyFolder)
 router.post("/rename", renameFolder)
-router.post("/trash/:id", moveToTrash);
-router.post("/restore/:id", restoreItem);
+router.post("/trash/:id", moveToTrash)
+router.post("/restore/:id", restoreItem)
 
 module.exports = router

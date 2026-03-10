@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt")
 const { Op } = require("sequelize")
 const nodemailer = require("nodemailer")
 const { v4: uuidv4 } = require("uuid")
-const {createRootDir} = require("./folder")
+const { createRootDir } = require("./folder")
 require("dotenv").config()
 
 let transporter = nodemailer.createTransport({
@@ -70,12 +70,13 @@ async function userLogin(req, res) {
         )
 
         res.cookie("token", accessToken, {
-            httpOnly: false,
-            secure: false,
-            sameSite: "Lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000
+            httpOnly: true,  
+            secure: true,   
+            sameSite: "Lax",  
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: "/"        
         })
-
+        
         user.token = accessToken
         user.lastAccessedAt = Date.now()
         user.save()

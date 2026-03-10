@@ -48,7 +48,10 @@ const File = sequelize.define(
     }
 )
 
-// Association
-File.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' });
+File.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' })
+File.belongsTo(User, { 
+    as: 'owner', 
+    foreignKey: 'ownerId' 
+})
 
 module.exports = File

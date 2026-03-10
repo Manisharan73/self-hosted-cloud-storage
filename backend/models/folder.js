@@ -48,8 +48,12 @@ const Folder = sequelize.define(
     }
 )
 
-// Associations
-Folder.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' });
-Folder.hasMany(Folder, { foreignKey: 'parentFolderId', as: 'subFolders' });
+Folder.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' })
+Folder.hasMany(Folder, { foreignKey: 'parentFolderId', as: 'subFolders' })
+Folder.belongsTo(User, { 
+    as: 'owner',            
+    foreignKey: 'ownerId'   
+})
+
 
 module.exports = Folder

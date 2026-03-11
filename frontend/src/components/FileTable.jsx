@@ -24,10 +24,10 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                 setCurrentFolderId(item.id)
                 return
             }
-            console.log(currentFolderID, item.id)
+            // console.log(currentFolderID, item.id)
             try {
                 const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${item.id}`, { withCredentials: true })
-                console.log(res.data)
+                // console.log(res.data)
                 setItems(res.data?.combinedData)
                 setParentFolderId(res.data?.currentFolder?.parentFolderId)
                 setCurrentFolderId(res.data?.currentFolder?.id)

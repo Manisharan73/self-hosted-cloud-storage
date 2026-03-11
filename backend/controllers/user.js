@@ -541,30 +541,39 @@ async function listShared(req, res) {
         let sharedFolders = []
         let sharedFiles = []
         let backId = null
+        let breadcrumbPath = []
 
         if (!id || id === "root") {
             const sharedItems = await SharedItem.findAll({
                 where: { 
                     sharedWith: req.user.id,
-                    status: 'active'
+                    status: 'active' 
                 }
             })
 
-            const folderIds = sharedItems.filter(i => i.itemType === 'folder').map(i => i.itemId)
-            const fileIds = sharedItems.filter(i => i.itemType === 'file').map(i => i.itemId)
+            const folderIds = sharedItems
+                .filter(i => i.itemType === 'folder')
+                .map(i => i.itemId)
+                
+            const fileIds = sharedItems
+                .filter(i => i.itemType === 'file')
+                .map(i => i.itemId)
 
-            [sharedFolders, sharedFiles] = await Promise.all([
-                folderIds.length ? Folder.findAll({
-                    where: { id: folderIds, isTrashed: false },
-                    include: [{ model: User, as: 'owner', attributes: ['name'] }]
-                }) : [],
-                fileIds.length ? File.findAll({
-                    where: { id: fileIds, isTrashed: false },
-                    include: [{ model: User, as: 'owner', attributes: ['name'] }]
-                }) : []
-            ])
+            const folderQuery = folderIds.length ? Folder.findAll({
+                where: { id: folderIds, isTrashed: false },
+                include: [{ model: User, as: 'owner', attributes: ['name'] }]
+            }) : Promise.resolve([])
 
+            const fileQuery = fileIds.length ? File.findAll({
+                where: { id: fileIds, isTrashed: false },
+                include: [{ model: User, as: 'owner', attributes: ['name'] }]
+            }) : Promise.resolve([])
+
+            [sharedFolders, sharedFiles] = await Promise.all([folderQuery, fileQuery])
+
+            breadcrumbPath = [{ id: "root", name: "Shared with me" }]
             backId = null
+
         } else {
             currentFolder = await Folder.findByPk(id)
 
@@ -588,11 +597,31 @@ async function listShared(req, res) {
                 })
             ])
 
-            const explicitlyShared = await SharedItem.findOne({
-                where: { itemId: id, sharedWith: req.user.id, status: 'active' }
-            })
+            let tempId = id
+            let depth = 0
+            const MAX_DEPTH = 50
 
-            backId = explicitlyShared ? "root" : currentFolder.parentFolderId
+            while (tempId && depth < MAX_DEPTH) {
+                const folder = await Folder.findByPk(tempId)
+                if (!folder) break
+
+                breadcrumbPath.unshift({ id: folder.id, name: folder.name })
+
+                const isEntryPoint = await SharedItem.findOne({
+                    where: { itemId: tempId, sharedWith: req.user.id, status: 'active' }
+                })
+
+                if (isEntryPoint) {
+                    backId = "root"
+                    break 
+                }
+
+                tempId = folder.parentFolderId
+                backId = folder.parentFolderId
+                depth++
+            }
+
+            breadcrumbPath.unshift({ id: "root", name: "Shared with me" })
         }
 
         const combinedData = [
@@ -612,7 +641,8 @@ async function listShared(req, res) {
                 id: currentFolder.id,
                 name: currentFolder.name,
                 parentFolderId: backId
-            } : { id: "root", parentFolderId: null }
+            } : { id: "root", parentFolderId: null },
+            path: breadcrumbPath
         })
 
     } catch(err) {

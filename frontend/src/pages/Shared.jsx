@@ -23,10 +23,11 @@ const Shared = () => {
             const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listShared?id=${folderId}`, {
                 withCredentials: true
             })
+            // console.log(res.data)
             setItems(res.data?.combinedData)
             setParentFolderId(res.data?.currentFolder?.parentFolderId)
             setBreadcrumbs(res.data?.path || [])
-            console.log(breadcrumbs)
+            // console.log(breadcrumbs)
         } catch (err) {
             console.error(err)
         }

@@ -21,6 +21,9 @@ app.use(logHandler(process.env.LOGS_FILENAME))
 app.use(cookieParser())
 
 const sequelize = require('./sequelize')
+const User = require("./models/user")
+const Folder = require("./models/folder")
+const File = require("./models/file")
 
 app.use(cors({
     origin: [

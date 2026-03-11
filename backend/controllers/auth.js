@@ -210,7 +210,7 @@ async function userVerify(req, res) {
 }
 
 const sendVerificationEmail = async ({ id, email }) => {
-    const currentUrl = "http://localhost:3001/"
+    const currentUrl = "https://storagecloud.agdivya.xyz/"
 
     const uniqueString = uuidv4() + id
     console.log(uniqueString)

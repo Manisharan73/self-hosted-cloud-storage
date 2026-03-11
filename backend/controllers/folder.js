@@ -82,6 +82,22 @@ async function createFolder(req, res) {
             finalParentId = rootFolder.id 
         }
 
+        const existingFolder = await Folder.findOne({
+            where: {
+                ownerId: req.user.id,
+                parentFolderId: finalParentId,
+                name: name,
+                isTrashed: false 
+            }
+        })
+
+        if (existingFolder) {
+            return res.status(400).json({ 
+                status: false, 
+                msg: "A folder with this name already exists in this directory" 
+            })
+        }
+
         await Folder.create({
             ownerId: req.user.id,
             name,
@@ -91,7 +107,7 @@ async function createFolder(req, res) {
         return res.status(201).json({ status: true, msg: "Folder created successfully" })
 
     } catch (err) {
-        console.error(err)
+        console.error("Folder creation failed:", err)
         return res.status(500).json({ status: false, msg: "Folder creation failed", err: err.message })
     }
 }
@@ -104,24 +120,36 @@ async function deleteFolder(req, res) {
         if (!folder) return res.status(404).json({ error: "Folder not found" })
         if (folder.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
 
-        const files = await File.findAll({
-            where: { parentFolderId: folderId, ownerId: req.user.id }
-        })
+        const userDir = getUserDir(req.user.uniqueName) 
+        
+        const queue = [folder.id]
+        const filesToDelete = []
+        const foldersToDelete = [folder] 
 
-        if (files.length > 0) {
-            const userDir = getUserDir(req.user.uniqueName)
-            
-            for (const file of files) {
-                const filePath = path.join(userDir, file.filename)
-                await fs.unlink(filePath).catch(() => {})
+        while (queue.length > 0) {
+            const currentId = queue.shift()
+
+            const files = await File.findAll({ where: { parentFolderId: currentId } })
+            filesToDelete.push(...files)
+
+            const subFolders = await Folder.findAll({ where: { parentFolderId: currentId } })
+            for (const sub of subFolders) {
+                queue.push(sub.id)
+                foldersToDelete.push(sub)
             }
-
-            await File.destroy({ where: { parentFolderId: folderId } })
         }
 
-        await folder.destroy()
+        for (const file of filesToDelete) {
+            const filePath = path.join(userDir, file.filename)
+            await fs.unlink(filePath).catch(() => {})
+            await file.destroy()
+        }
 
-        return res.status(200).json({ msg: "Folder deleted permanently" })
+        for (let i = foldersToDelete.length - 1; i >= 0; i--) {
+            await foldersToDelete[i].destroy()
+        }
+
+        return res.status(200).json({ msg: "Folder and all contents deleted permanently" })
 
     } catch (err) {
         console.error("Delete error:", err)
@@ -130,22 +158,43 @@ async function deleteFolder(req, res) {
 }
 
 async function moveFolder(req, res) {
-    const { to, id: folderId } = req.body
+    try {
+        const { to, id: folderId } = req.body
 
-    if (!folderId || !to) {
-        return res.status(400).json({ msg: "Missing folderId or destination folder" })
+        if (!folderId || !to) {
+            return res.status(400).json({ msg: "Missing folderId or destination folder" })
+        }
+
+        const folder = await Folder.findByPk(folderId)
+
+        if (!folder) return res.status(404).json({ msg: "Folder not found" })
+        if (folder.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
+        if (to === folder.parentFolderId) return res.status(400).json({ msg: "Folder is already in same directory" })
+
+        const existingFolder = await Folder.findOne({
+            where: {
+                ownerId: req.user.id,
+                parentFolderId: to,
+                name: folder.name,
+                isTrashed: false
+            }
+        })
+
+        if (existingFolder) {
+            return res.status(400).json({ 
+                msg: "A folder with this name already exists in the destination directory" 
+            })
+        }
+
+        folder.parentFolderId = to
+        await folder.save()
+        
+        return res.status(200).json({ msg: "Moved Successfully" })
+
+    } catch (err) {
+        console.error("Move folder error:", err)
+        return res.status(500).json({ msg: "Failed to move", err: err.message })
     }
-
-    const folder = await Folder.findByPk(folderId)
-
-    if (!folder) return res.status(404).json({ msg: "Folder not found" })
-    if (folder.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
-    if (to === folder.parentFolderId) return res.status(400).json({ msg: "Folder is already in same directory" })
-
-    folder.parentFolderId = to
-    await folder.save()
-        .then(() => res.status(200).json({ msg: "Moved Successfully" }))
-        .catch((err) => res.status(500).json({ msg: "Failed to move", err: err.message }))
 }
 
 async function copyFolder(req, res) {
@@ -215,7 +264,26 @@ async function renameFolder(req, res) {
         if (!folder) return res.status(404).json({ error: "Folder not found" })
         if (folder.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
 
-        folder.name = foldername
+        if (folder.name === foldername.trim()) {
+            return res.status(200).json({ msg: "Renamed Successfully" })
+        }
+
+        const existingFolder = await Folder.findOne({
+            where: {
+                ownerId: req.user.id,
+                parentFolderId: folder.parentFolderId, 
+                name: foldername.trim(),               
+                isTrashed: false
+            }
+        })
+
+        if (existingFolder) {
+            return res.status(400).json({ 
+                msg: "A folder with this name already exists in this directory" 
+            })
+        }
+
+        folder.name = foldername.trim()
         await folder.save()
         
         return res.status(200).json({ msg: "Renamed Successfully" })
@@ -231,14 +299,44 @@ async function moveToTrash(req, res) {
         const id = req.params.id
         const folder = await Folder.findByPk(id)
 
-        if(!folder || folder.ownerId !== req.user.id) return res.status(404).json({ msg: "Folder not found" })
+        if (!folder || folder.ownerId !== req.user.id) {
+            return res.status(404).json({ msg: "Folder not found" })
+        }
 
+        const deletionDate = new Date()
         folder.isTrashed = true
-        folder.deletedAt = new Date()
+        folder.deletedAt = deletionDate
         await folder.save()
 
-        res.json({ msg: "Folder moved to Trash successfully" })
+        const queue = [folder.id]
+
+        while (queue.length > 0) {
+            const currentId = queue.shift()
+            await File.update(
+                { isTrashed: true, deletedAt: deletionDate },
+                { where: { parentFolderId: currentId, isTrashed: false } }
+            )
+
+            const subFolders = await Folder.findAll({
+                where: { parentFolderId: currentId, isTrashed: false }
+            })
+
+            if (subFolders.length > 0) {
+                const subFolderIds = subFolders.map(sub => sub.id)
+                
+                await Folder.update(
+                    { isTrashed: true, deletedAt: deletionDate },
+                    { where: { id: subFolderIds } }
+                )
+
+                queue.push(...subFolderIds)
+            }
+        }
+
+        res.json({ msg: "Folder and all its contents moved to Trash successfully" })
+
     } catch(err) {
+        console.error("Trash error:", err)
         res.status(500).json({ msg: "Trash failed", error: err.message })
     }
 }
@@ -247,16 +345,81 @@ async function restoreItem(req, res) {
     try {
         const folder = await Folder.findByPk(req.params.id)
 
-        if(!folder || folder.ownerId !== req.user.id) return res.status(404).json({ msg: "Folder not found" })
+        if (!folder || folder.ownerId !== req.user.id) {
+            return res.status(404).json({ msg: "Folder not found" })
+        }
+
+        let targetParentId = folder.parentFolderId
+
+        if (targetParentId) {
+            const parentFolder = await Folder.findByPk(targetParentId)
+            
+            if (!parentFolder || parentFolder.isTrashed) {
+                targetParentId = null 
+            }
+        }
+
+        let finalName = folder.name
+        let nameCounter = 1
+        
+        while (true) {
+            const existingFolder = await Folder.findOne({
+                where: {
+                    ownerId: req.user.id,
+                    parentFolderId: targetParentId,
+                    name: finalName,
+                    isTrashed: false
+                }
+            })
+
+            if (!existingFolder) break
+            
+            finalName = `${folder.name} (Restored ${nameCounter})`
+            nameCounter++
+        }
 
         await folder.update({
+            name: finalName,
+            parentFolderId: targetParentId,
             isTrashed: false,
             deletedAt: null
         })
 
-        res.json({ msg: "Folder restored successfully" })
+        const queue = [folder.id]
+
+        while (queue.length > 0) {
+            const currentId = queue.shift()
+
+            await File.update(
+                { isTrashed: false, deletedAt: null },
+                { where: { parentFolderId: currentId, isTrashed: true } }
+            )
+
+            const subFolders = await Folder.findAll({
+                where: { parentFolderId: currentId, isTrashed: true }
+            })
+
+            if (subFolders.length > 0) {
+                const subFolderIds = subFolders.map(sub => sub.id)
+                
+                await Folder.update(
+                    { isTrashed: false, deletedAt: null },
+                    { where: { id: subFolderIds } }
+                )
+
+                queue.push(...subFolderIds)
+            }
+        }
+
+        res.json({ 
+            msg: "Folder and its contents restored successfully",
+            restoredToRoot: targetParentId !== folder.parentFolderId,
+            renamedTo: finalName !== folder.name ? finalName : null
+        })
+
     } catch(err) {
-        res.status(500).json({ msg: "Restore failed" })
+        console.error("Restore error:", err)
+        res.status(500).json({ msg: "Restore failed", error: err.message })
     }
 }
 

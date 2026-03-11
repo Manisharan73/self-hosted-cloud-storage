@@ -38,6 +38,13 @@ async function initDb() {
     try {
         await sequelize.authenticate()
         console.log('Sequelize connected')
+
+        Folder.belongsTo(User, { as: 'owner', foreignKey: 'ownerId' });
+        User.hasMany(Folder, { foreignKey: 'ownerId' });
+
+        File.belongsTo(User, { as: 'owner', foreignKey: 'ownerId' });
+        User.hasMany(File, { foreignKey: 'ownerId' });
+
         await sequelize.sync()
     } catch (err) {
         console.error('DB connection failed:', err)

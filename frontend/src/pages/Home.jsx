@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import '../styles/Home.css'
-import { MdOutlineFileUpload, MdOutlineFolder, MdHome } from "react-icons/md"
+import { MdOutlineFileUpload, MdOutlineFolder, MdHome, MdContentPaste } from "react-icons/md"
 import { FaSearch, FaBars } from 'react-icons/fa'
 import Sidebar from '../components/Sidebar'
 import axios from 'axios'
 import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
 import { useTheme } from '../context/ThemeContext'
+import { IoClose } from 'react-icons/io5'
 
 const Home = () => {
     const { isDarkMode } = useTheme()
@@ -82,6 +83,42 @@ const Home = () => {
         }
     }
 
+    const handlePaste = async () => {
+        if (!clipboard.item) return
+
+        try {
+            const type = clipboard.item.type === "Folder" ? "/folder" : "/file"
+            const endpoint = clipboard.type === 'cut' ? '/move' : '/copy'
+            await axios.post(`${import.meta.env.VITE_BACKEND}${type}${endpoint}`, {
+                id: clipboard.item.id,
+                to: currentFolderID
+            }, { withCredentials: true })
+
+            if (clipboard.type === 'cut') {
+                setClipboard({ item: null, type: null })
+                localStorage.setItem("clipboard", JSON.stringify({ item: null, type: null }))
+            }
+
+            refreshFiles(currentFolderID)
+        } catch (err) {
+            const errorMsg = err.response?.data?.error || "Storage service is unreachable."
+            alert(`Paste failed: ${errorMsg}`)
+        }
+    }
+
+    const clearClipboard = (e) => {
+        e.stopPropagation()
+        setClipboard({ item: null, type: null })
+        localStorage.setItem("clipboard", JSON.stringify({ item: null, type: null }))
+    }
+
+    const handleBackClick = () => {
+        if (breadcrumbs.length > 1) {
+            const parentId = breadcrumbs[breadcrumbs.length - 2].id;
+            setCurrentFolderId(parentId);
+        }
+    };
+
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
             <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)}></div>
@@ -131,9 +168,6 @@ const Home = () => {
                                                     : 'crumb-link'
                                             }
                                         >
-                                            {index === 0
-                                                ? <MdHome style={{ marginBottom: '-3px' }} />
-                                                : null}
                                             {crumb.name}
                                         </button>
 
@@ -142,7 +176,23 @@ const Home = () => {
                                     </span>
                                 ))}
                             </div>
-                            <button onClick={() => refreshFiles(parentFolderId)} className="back-btn">← Back</button>
+                            <div className={`paste-container ${clipboard.item ? 'visible' : 'hidden'}`}>
+                                <button className="paste-btn" onClick={handlePaste}>
+                                    <MdContentPaste className="paste-icon" />
+                                    <span>Paste {clipboard.type === 'move' ? 'here' : 'copy'}</span>
+                                    <small className="clipboard-label">{clipboard?.item?.name}</small>
+
+                                    <IoClose
+                                        className="clear-clipboard"
+                                        onClick={clearClipboard}
+                                    />
+                                </button>
+                            </div>
+                            {breadcrumbs.length > 1 && (
+                                <button onClick={handleBackClick} className="back-btn text-blue-500 hover:underline">
+                                    ← Back
+                                </button>
+                            )}
                         </div>
 
                         <FileTable

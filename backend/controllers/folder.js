@@ -3,6 +3,7 @@ const path = require("path")
 const Folder = require("../models/folder")
 const File = require("../models/file")
 const { Op } = require("sequelize")
+const SharedItem = require("../models/sharedItem")
 
 const getUserDir = (uniqueName) => path.join(__dirname, "..", "uploads", uniqueName)
 
@@ -355,7 +356,7 @@ async function restoreItem(req, res) {
             const parentFolder = await Folder.findByPk(targetParentId)
             
             if (!parentFolder || parentFolder.isTrashed) {
-                targetParentId = null 
+                targetParentId = await Folder.findOne({ where: { ownerId: req.user.id, parentFolderId: null } })
             }
         }
 

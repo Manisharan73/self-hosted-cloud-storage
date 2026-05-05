@@ -3,6 +3,7 @@ const path = require("path")
 const File = require("../models/file")
 const Folder = require("../models/folder")
 const { Op } = require("sequelize")
+const SharedItem = require("../models/sharedItem")
 
 const getUserDir = (uniqueName) => path.join(__dirname, "..", "uploads", uniqueName)
 
@@ -30,15 +31,15 @@ async function uploadFile(req, res) {
                 ownerId: req.user.id,
                 parentFolderId: folderID,
                 originalFilename: req.file.originalname,
-                isTrashed: false 
+                isTrashed: false
             }
         })
 
         if (existingFile) {
             await fs.unlink(req.file.path).catch(() => { })
-            
-            return res.status(400).json({ 
-                error: "A file with this name already exists in this directory" 
+
+            return res.status(400).json({
+                error: "A file with this name already exists in this directory"
             })
         }
 
@@ -61,7 +62,7 @@ async function uploadFile(req, res) {
 async function downloadFile(req, res) {
     try {
         const file = await File.findByPk(req.params.id)
-        
+
         if (!file || file.ownerId !== req.user.id) {
             return res.status(404).json({ msg: "File not found or unauthorized" })
         }
@@ -71,7 +72,7 @@ async function downloadFile(req, res) {
         res.download(filePath, file.originalFilename, (err) => {
             if (err) {
                 console.error("Express Download Error:", err)
-                
+
                 if (!res.headersSent) {
                     res.status(404).json({ msg: "Physical file is missing from the server disk" })
                 }
@@ -97,8 +98,8 @@ async function copyFile(req, res) {
         const destFolder = await Folder.findByPk(to)
         if (!destFolder || destFolder.ownerId !== req.user.id) return res.status(403).json({ error: "Invalid destination" })
 
-        const originalExt = path.extname(file.originalFilename) 
-        const originalBase = path.basename(file.originalFilename, originalExt) 
+        const originalExt = path.extname(file.originalFilename)
+        const originalBase = path.basename(file.originalFilename, originalExt)
 
         const copyBase = `${originalBase}-copy`
 
@@ -115,14 +116,14 @@ async function copyFile(req, res) {
                 }
             })
 
-            if (!existingFile) break 
+            if (!existingFile) break
             finalName = `${copyBase} (${nameCounter})${originalExt}`
             nameCounter++
         }
 
         const newSystemName = `${Date.now()}-${finalName}`
-        const userDir = getUserDir(req.user.uniqueName) 
-        
+        const userDir = getUserDir(req.user.uniqueName)
+
         const sourcePath = path.join(userDir, file.filename)
         const destPath = path.join(userDir, newSystemName)
 
@@ -138,12 +139,12 @@ async function copyFile(req, res) {
                 size: file.size,
                 mimetype: file.mimetype,
             })
-            
+
             return res.status(201).json({ msg: "Successful", file: newFile })
-            
+
         } catch (dbErr) {
             await fs.unlink(destPath).catch(() => { })
-            throw dbErr 
+            throw dbErr
         }
 
     } catch (err) {
@@ -155,7 +156,7 @@ async function copyFile(req, res) {
 async function deleteFile(req, res) {
     try {
         const file = await File.findByPk(req.params.id)
-        
+
         if (!file) return res.status(404).json({ msg: "File not found" })
         if (file.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
 
@@ -164,13 +165,13 @@ async function deleteFile(req, res) {
         await fs.unlink(filePath).catch(() => console.warn("File already missing on disk"))
 
         await SharedItem.destroy({
-            where: { itemId: file.id, itemType: 'file' } 
+            where: { itemId: file.id, itemType: 'file' }
         }).catch((err) => console.error("Failed to clean up shared items:", err))
 
         await file.destroy()
 
         return res.json({ msg: "Deleted successfully" })
-        
+
     } catch (err) {
         console.error("Delete file error:", err)
         return res.status(500).json({ error: "Delete failed", details: err.message })
@@ -202,11 +203,11 @@ async function renameFile(req, res) {
         }
 
         const file = await File.findByPk(id)
-        
+
         if (!file) return res.status(404).json({ error: "File not found" })
         if (file.ownerId !== req.user.id) return res.status(403).json({ msg: "Forbidden" })
 
-        const originalExt = path.extname(file.originalFilename) 
+        const originalExt = path.extname(file.originalFilename)
         let sanitizedName = name.trim()
 
         if (originalExt && !sanitizedName.endsWith(originalExt)) {
@@ -220,21 +221,21 @@ async function renameFile(req, res) {
         const existingFile = await File.findOne({
             where: {
                 ownerId: req.user.id,
-                parentFolderId: file.parentFolderId, 
+                parentFolderId: file.parentFolderId,
                 originalFilename: sanitizedName,
                 isTrashed: false
             }
         })
 
         if (existingFile) {
-            return res.status(400).json({ 
-                error: "A file with this name already exists in this directory" 
+            return res.status(400).json({
+                error: "A file with this name already exists in this directory"
             })
         }
 
         file.originalFilename = sanitizedName
         await file.save()
-        
+
         return res.json({ msg: "Renamed Successfully" })
 
     } catch (err) {
@@ -283,8 +284,8 @@ async function moveFile(req, res) {
         })
 
         if (existingFile) {
-            return res.status(400).json({ 
-                msg: "A file with this name already exists in the destination directory" 
+            return res.status(400).json({
+                msg: "A file with this name already exists in the destination directory"
             })
         }
 
@@ -302,7 +303,7 @@ async function moveFile(req, res) {
 async function moveToTrash(req, res) {
     try {
         const file = await File.findByPk(req.params.id)
-        
+
         if (!file) {
             return res.status(404).json({ msg: "File not found" })
         }
@@ -315,7 +316,7 @@ async function moveToTrash(req, res) {
         await file.save()
 
         return res.json({ msg: "Moved to Trash" })
-        
+
     } catch (err) {
         console.error("Trash file error:", err)
         return res.status(500).json({ msg: "Trash failed", error: err.message })
@@ -325,7 +326,7 @@ async function moveToTrash(req, res) {
 async function restoreItem(req, res) {
     try {
         const file = await File.findByPk(req.params.id)
-        
+
         if (!file || file.ownerId !== req.user.id) {
             return res.status(404).json({ msg: "File not found" })
         }
@@ -334,15 +335,19 @@ async function restoreItem(req, res) {
 
         if (targetParentId) {
             const parentFolder = await Folder.findByPk(targetParentId)
-            
+
             if (!parentFolder || parentFolder.isTrashed) {
-                targetParentId = null 
+                const rootFolder = await Folder.findOne({
+                    where: { ownerId: req.user.id, parentFolderId: null }
+                })
+
+                targetParentId = rootFolder ? rootFolder.id : null
             }
         }
 
-        const originalExt = path.extname(file.originalFilename) 
-        const originalBase = path.basename(file.originalFilename, originalExt) 
-        
+        const originalExt = path.extname(file.originalFilename)
+        const originalBase = path.basename(file.originalFilename, originalExt)
+
         let finalName = file.originalFilename
         let nameCounter = 1
 
@@ -356,8 +361,8 @@ async function restoreItem(req, res) {
                 }
             })
 
-            if (!existingFile) break 
-            
+            if (!existingFile) break
+
             finalName = `${originalBase} (Restored ${nameCounter})${originalExt}`
             nameCounter++
         }
@@ -366,10 +371,10 @@ async function restoreItem(req, res) {
         file.parentFolderId = targetParentId
         file.isTrashed = false
         file.deletedAt = null
-        
+
         await file.save()
 
-        return res.json({ 
+        return res.json({
             msg: "Restored successfully",
             restoredToRoot: targetParentId !== file.parentFolderId,
             renamedTo: finalName !== file.originalFilename ? finalName : null
@@ -382,82 +387,82 @@ async function restoreItem(req, res) {
 }
 
 async function getFolderPath(folderID, userId) {
-    const path = [];
-    let currentId = folderID;
-    let depth = 0;
-    const MAX_DEPTH = 50; 
+    const path = []
+    let currentId = folderID
+    let depth = 0
+    const MAX_DEPTH = 50
 
     if (!currentId || currentId === "root") {
-        return [{ id: "root", name: "My Storage" }];
+        return [{ id: "root", name: "My Storage" }]
     }
 
     while (currentId && depth < MAX_DEPTH) {
         const folder = await Folder.findByPk(currentId, {
             attributes: ['id', 'name', 'parentFolderId', 'ownerId']
-        });
+        })
 
-        if (!folder || folder.ownerId !== userId) break;
+        if (!folder || folder.ownerId !== userId) break
 
-        const isActualRoot = folder.parentFolderId === null;
+        const isActualRoot = folder.parentFolderId === null
 
         path.unshift({
-            id: isActualRoot ? "root" : folder.id, 
+            id: isActualRoot ? "root" : folder.id,
             name: isActualRoot ? "My Storage" : folder.name
-        });
+        })
 
-        currentId = folder.parentFolderId;
-        depth++;
+        currentId = folder.parentFolderId
+        depth++
     }
 
-    return path;
+    return path
 }
 
 async function listFiles(req, res) {
     try {
-        let folderID = req.query.id || "root"; 
-        const viewingTrash = req.query.view === 'trash';
+        let folderID = req.query.id || "root"
+        const viewingTrash = req.query.view === 'trash'
 
         if (!req.user || !req.user.id) {
-            return res.status(401).json({ msg: "Unauthorized" });
+            return res.status(401).json({ msg: "Unauthorized" })
         }
 
-        let currentFolder = null;
-        let pathTrail = [];
-        let files = [];
-        let folders = [];
+        let currentFolder = null
+        let pathTrail = []
+        let files = []
+        let folders = []
 
         if (viewingTrash) {
             [files, folders] = await Promise.all([
                 File.findAll({ where: { ownerId: req.user.id, isTrashed: true } }),
                 Folder.findAll({ where: { ownerId: req.user.id, isTrashed: true } })
-            ]);
+            ])
 
-            pathTrail = [{ id: "trash", name: "Trash" }];
-            
+            pathTrail = [{ id: "trash", name: "Trash" }]
+
         } else {
             if (folderID === "root") {
                 const root = await Folder.findOne({
                     where: { ownerId: req.user.id, parentFolderId: null }
-                });
-                if (!root) return res.status(404).json({ msg: "Root folder not found" });
-                folderID = root.id;
+                })
+                if (!root) return res.status(404).json({ msg: "Root folder not found" })
+                folderID = root.id
             }
 
             [currentFolder, pathTrail] = await Promise.all([
                 Folder.findByPk(folderID),
                 getFolderPath(folderID, req.user.id)
-            ]);
+            ])
 
-            if (!currentFolder) return res.status(404).json({ msg: "Folder does not exist" });
-            
+            if (!currentFolder) return res.status(404).json({ msg: "Folder does not exist" })
+
             if (currentFolder.ownerId !== req.user.id) {
-                return res.status(403).json({ msg: "Forbidden access to this folder" }); 
+                return res.status(403).json({ msg: "Forbidden access to this folder" })
             }
 
             [files, folders] = await Promise.all([
                 File.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } }),
                 Folder.findAll({ where: { ownerId: req.user.id, parentFolderId: folderID, isTrashed: false } })
-            ]);
+            ])
         }
 
         const combinedData = [
@@ -475,18 +480,18 @@ async function listFiles(req, res) {
                 size: f.size,
                 date: f.updatedAt,
             }))
-        ];
+        ]
 
         res.status(200).json({
-            combinedData, 
-            currentFolder: currentFolder || { id: "trash", name: "Trash" }, 
+            combinedData,
+            currentFolder: currentFolder || { id: "trash", name: "Trash" },
             path: pathTrail,
             msg: "Successful"
-        });
+        })
 
     } catch (err) {
-        console.error("List files error:", err);
-        return res.status(500).json({ error: "Failed to list contents" });
+        console.error("List files error:", err)
+        return res.status(500).json({ error: "Failed to list contents" })
     }
 }
 

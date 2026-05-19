@@ -8,6 +8,8 @@ import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
 import { useTheme } from '../context/ThemeContext'
 import { IoClose } from 'react-icons/io5'
+import ToastNotification from '../components/ToastNotification'
+import { useNotifications } from '../context/NotificationContext'
 
 const Home = () => {
     const { isDarkMode } = useTheme()
@@ -21,6 +23,7 @@ const Home = () => {
     const [isUploading, setIsUploading] = useState(false)
     const [popUp, setPopUp] = useState(null)
     const [breadcrumbs, setBreadcrumbs] = useState([])
+    const {toasts, setToasts} = useNotifications()
 
     const [clipboard, setClipboard] = useState(() => {
         const saved = localStorage.getItem("clipboard")
@@ -209,6 +212,19 @@ const Home = () => {
                             setPopUp={setPopUp}
                         />
                     </section>
+                </div>
+                <div className="toast-wrapper">
+                    {toasts.map((toast) => (
+                        <ToastNotification
+                            key={toast.id}
+                            toast={toast}
+                            removeToast={() =>
+                                setToasts(prev =>
+                                    prev.filter(t => t.id !== toast.id)
+                                )
+                            }
+                        />
+                    ))}
                 </div>
                 <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view='storage' />
             </main>

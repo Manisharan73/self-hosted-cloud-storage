@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import "../styles/PopUpCMR.css"
 import { IoClose } from "react-icons/io5"
 import axios from "axios"
+import { socket } from "../scripts/socket"
 
 const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles }) => {
     const [closing, setClosing] = useState(false)
@@ -37,6 +38,8 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
                 sharedWithUserId: recipientId,
                 permission: permission
             }, { withCredentials: true })
+
+            socket.emit("itemShared", {recipientId})
 
             alert("Share invitation sent successfully!")
         } catch(err) {

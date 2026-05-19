@@ -27,7 +27,7 @@
 }
 
 
-.close-popup-btn {
+.popup-dialog .close-popup-btn {
     position: absolute;
     top: 20px;
     right: 20px;
@@ -43,7 +43,7 @@
     transition: all 0.2s ease;
 }
 
-.close-popup-btn:hover {
+.popup-dialog .close-popup-btn:hover {
     background-color: var(--hover-bg);
     color: var(--text-main);
     transform: scale(1.1);
@@ -72,6 +72,7 @@
 }
 
 .popup-dialog {
+    position: relative;
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     padding: 24px;

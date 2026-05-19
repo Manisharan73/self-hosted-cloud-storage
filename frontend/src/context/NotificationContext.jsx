@@ -1,11 +1,13 @@
 import { createContext, useState, useEffect, useContext } from "react"
 import axios from "axios"
+import { socket } from "../scripts/socket"
 
 const NotificationContext = createContext()
 
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState({ received: [], sent: [] })
     const [loading, setLoading] = useState(true)
+    const [toasts, setToasts] = useState([])
 
     const fetchData = async () => {
         try {
@@ -19,17 +21,47 @@ export const NotificationProvider = ({ children }) => {
     }
 
     useEffect(() => {
-        fetchData()
+        socket.on("connection", () => {
+            console.log("Connected ", socket.id)
+        })
 
-        const interval = setInterval(() => {
-            fetchData()
-        }, 15000)
+        socket.on("welcome", (s) => console.log(s))
 
-        return () => clearInterval(interval)
+        socket.io.on("upgrade", (transport) => {
+            console.log("upgraded to", transport.name)
+        })
+
+        socket.io.on("reconnect_attempt", () => {
+            console.log("reconnect attempt")
+        })
+
+        socket.on("connect_error", (err) => {
+            console.log(err)
+        })
+
+        socket.on("shareNotification", (notification) => {
+            const id = crypto.randomUUID()
+
+            const toastData = {
+                id,
+                ...notification
+            }
+            setToasts(prev => [...prev, toastData])
+
+            setTimeout(() => {
+                setToasts(prev =>
+                    prev.filter(t => t.id !== id)
+                )
+            }, 5000)
+        })
+
+        return () => {
+            socket.disconnect()
+        }
     }, [])
 
     return (
-        <NotificationContext.Provider value={{ notifications, setNotifications, fetchData, loading }}>
+        <NotificationContext.Provider value={{ toasts, setToasts, notifications, setNotifications, fetchData, loading }}>
             {children}
         </NotificationContext.Provider>
     )

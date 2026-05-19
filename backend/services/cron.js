@@ -2,9 +2,9 @@ const cron = require('node-cron')
 const fs = require('fs').promises
 const path = require('path')
 const { Op } = require('sequelize')
-const File = require('./models/file.js')
-const Folder = require('./models/folder.js')
-const User = require('./models/user.js') 
+const File = require('../models/file.js')
+const Folder = require('../models/folder.js')
+const User = require('../models/user.js') 
 
 cron.schedule("*/15 * * * *", async () => {
     try {

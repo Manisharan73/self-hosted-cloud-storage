@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize')
-const sequelize = require('../sequelize')
+const sequelize = require('../services/sequelize')
 
 const Folder = sequelize.define(
     'Folder',

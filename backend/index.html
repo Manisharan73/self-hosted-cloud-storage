@@ -9,37 +9,24 @@
     </head>
 
     <body>
-        <form id="uploadForm">
-            <input type="file" id="fileInput" name="file" required />
-            <button type="submit">Upload</button>
-        </form>
-
+        <h1>Send Notification</h1>
+        <input type="text" id="createdby">
+        <input type="text" id="title">
+        <button id="send">Send</button>
+        <script src="/socket.io/socket.io.js"></script>
         <script>
-            document
-                .getElementById("uploadForm")
-                .addEventListener("submit", function (e) {
-                    e.preventDefault(); // 🚫 stop normal form submit
-
-                    const fileInput = document.getElementById("fileInput");
-                    const formData = new FormData();
-                    // formData.append("folderId", )
-                    formData.append("file", fileInput.files[0]);
-
-                    fetch("/file/upload/6", {
-                        method: "POST",
-                        headers: {
-                            "Authorization":
-                                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywidXNlcm5hbWUiOiJ5YXNoQGFyY2giLCJ1bmlxdWVOYW1lIjoiNGYxZTFlNzJlMDA2NDZkIiwiaWF0IjoxNzY5MjQ1NjMyLCJleHAiOjE3Njk4NTA0MzJ9.STJko3b_7igvZShZyu5j5VOIrfPmqK_4HSzcKE5SbA0"
-                        },
-                        body: formData
-                    })
-                        .then(res => {
-                            if (!res.ok) throw new Error("Upload failed");
-                            return res.json();
-                        })
-                        .then(data => console.log("Success:", data))
-                        .catch(err => console.error("Error:", err));
-                });
+            const socket = io()
+            
+            document.getElementById("send").addEventListener('click', () => {
+                const createdby = document.getElementById("createdby").value
+                const title = document.getElementById("title").value
+                if(createdby.trim() && title.trim()){
+                    socket.emit('sendNotification', {createdby, title})
+                    console.log("Notification sent")
+                    document.getElementById("createdby").value = ''
+                    document.getElementById("title").value = ''
+                }
+            })
         </script>
     </body>
 

@@ -1,6 +1,8 @@
 import { createContext, useState, useEffect, useContext } from "react"
 import axios from "axios"
 import { socket } from "../scripts/socket"
+import toast from "react-hot-toast"
+import NotificationItem from "../components/NotificationItem"
 
 const NotificationContext = createContext()
 
@@ -39,7 +41,12 @@ export const NotificationProvider = ({ children }) => {
             console.log(err)
         })
 
+        socket.on("test", (data) => {
+            console.log(data)
+        })
+
         socket.on("shareNotification", (notification) => {
+            console.log(notification)
             const id = crypto.randomUUID()
 
             const toastData = {
@@ -48,11 +55,19 @@ export const NotificationProvider = ({ children }) => {
             }
             setToasts(prev => [...prev, toastData])
 
+            toast((t) => (
+                <NotificationItem notification={notification} />
+            ))
+
             setTimeout(() => {
                 setToasts(prev =>
                     prev.filter(t => t.id !== id)
                 )
             }, 5000)
+        })
+
+        socket.onAny((event, ...args) => {
+            console.log("EVENT:", event, args)
         })
 
         return () => {

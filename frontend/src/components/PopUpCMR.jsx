@@ -25,7 +25,7 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
             if (!name.trim()) return
             await handleCreateFolder(name)
         }
-        
+
         setLoading(false)
         close()
     }
@@ -39,10 +39,14 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
                 permission: permission
             }, { withCredentials: true })
 
-            socket.emit("itemShared", {recipientId})
+            if (socket.connected) {
+                socket.emit("itemShared", recipientId)
+            } else {
+                console.log("Socket not connected")
+            }
 
             alert("Share invitation sent successfully!")
-        } catch(err) {
+        } catch (err) {
             console.error(err)
         }
     }
@@ -92,9 +96,9 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
             <form className="popup-dialog" onSubmit={handleSubmit}>
                 <header className="popup-header">
                     <h3>
-                        {popUp === "rename" ? `Rename ${selectedItem.type}` : 
-                         popUp === "share" ? `Share ${selectedItem.name}` : 
-                         "Create Folder"}
+                        {popUp === "rename" ? `Rename ${selectedItem.type}` :
+                            popUp === "share" ? `Share ${selectedItem.name}` :
+                                "Create Folder"}
                     </h3>
                     <button type="button" className="close-popup-btn" onClick={close}>
                         <IoClose size={24} />
@@ -115,9 +119,9 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
                                 required
                             />
                             <label className="popup-label" style={{ marginTop: '10px', display: 'block' }}>Permissions</label>
-                            <select 
-                                className="popup-input" 
-                                value={permission} 
+                            <select
+                                className="popup-input"
+                                value={permission}
                                 onChange={(e) => setPermission(e.target.value)}
                             >
                                 <option value="read">Read Only</option>

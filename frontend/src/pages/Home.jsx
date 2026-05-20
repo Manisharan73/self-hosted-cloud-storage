@@ -8,8 +8,9 @@ import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
 import { useTheme } from '../context/ThemeContext'
 import { IoClose } from 'react-icons/io5'
-import ToastNotification from '../components/ToastNotification'
+import ToastNotification from '../components/NotificationItem'
 import { useNotifications } from '../context/NotificationContext'
+import { Toaster } from "react-hot-toast"
 
 const Home = () => {
     const { isDarkMode } = useTheme()
@@ -23,7 +24,7 @@ const Home = () => {
     const [isUploading, setIsUploading] = useState(false)
     const [popUp, setPopUp] = useState(null)
     const [breadcrumbs, setBreadcrumbs] = useState([])
-    const {toasts, setToasts} = useNotifications()
+    const { toasts, setToasts } = useNotifications()
 
     const [clipboard, setClipboard] = useState(() => {
         const saved = localStorage.getItem("clipboard")
@@ -214,17 +215,18 @@ const Home = () => {
                     </section>
                 </div>
                 <div className="toast-wrapper">
-                    {toasts.map((toast) => (
-                        <ToastNotification
-                            key={toast.id}
-                            toast={toast}
-                            removeToast={() =>
-                                setToasts(prev =>
-                                    prev.filter(t => t.id !== toast.id)
-                                )
+                    <Toaster
+                        position="top-right"
+                        reverseOrder={true}
+                        toastOptions={{
+                            style: {
+                                background: "transparent",
+                                boxShadow: "none",
+                                padding: 0,
+                                maxWidth: 800
                             }
-                        />
-                    ))}
+                        }}
+                    />
                 </div>
                 <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view='storage' />
             </main>

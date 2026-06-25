@@ -5,6 +5,7 @@ import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
 import { FaBars } from 'react-icons/fa'
 import { useTheme } from '../context/ThemeContext'
+import { useLoading } from '../context/LoadingContext'
 
 const Shared = () => {
     const { isDarkMode } = useTheme()
@@ -15,10 +16,12 @@ const Shared = () => {
     const [currentFolderId, setCurrentFolderId] = useState("root")
     const [parentFolderId, setParentFolderId] = useState(null)
     const [breadcrumbs, setBreadcrumbs] = useState([])
+    const { setIsLoading } = useLoading()
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
     const fetchShared = async (folderId = "root") => {
+        setIsLoading(true)
         try {
             const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listShared?id=${folderId}`, {
                 withCredentials: true
@@ -30,6 +33,8 @@ const Shared = () => {
             // console.log(breadcrumbs)
         } catch (err) {
             console.error(err)
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -40,6 +45,7 @@ const Shared = () => {
 
     const handleBackClick = () => {
         if (breadcrumbs.length > 1) {
+            setIsLoading(true)
             const parentId = breadcrumbs[breadcrumbs.length - 2].id;
             setCurrentFolderId(parentId);
         }
@@ -77,7 +83,10 @@ const Shared = () => {
                                 {breadcrumbs.map((crumb, index) => (
                                     <span key={crumb.id} className="breadcrumb-item">
                                         <button
-                                            onClick={() => setCurrentFolderId(crumb.id)}
+                                            onClick={() => {
+                                                setIsLoading(true)
+                                                setCurrentFolderId(crumb.id)
+                                            }}
                                             className={index === breadcrumbs.length - 1 ? 'crumb-active' : 'crumb-link'}
                                         >
                                             {crumb.name}

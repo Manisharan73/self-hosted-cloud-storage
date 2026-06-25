@@ -2,7 +2,7 @@ import React from 'react'
 import '../styles/Sidebar.css'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FaHome, FaBell } from "react-icons/fa"
-import { IoPerson, IoClose } from "react-icons/io5" 
+import { IoPerson, IoClose } from "react-icons/io5"
 import { FaTrashCan } from "react-icons/fa6"
 import { LuLogOut } from "react-icons/lu"
 import { MdDarkMode, MdLightMode } from "react-icons/md"

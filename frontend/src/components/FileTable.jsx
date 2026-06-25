@@ -3,6 +3,8 @@ import "../styles/FileTable.css"
 import fileIcon from "../assets/default.svg"
 import folderIcon from "../assets/folder-blue.svg"
 import { useState } from "react"
+import { Oval } from "react-loader-spinner"
+import { useLoading } from "../context/LoadingContext"
 import FileContextMenu from "./FileContextMenu"
 import PopUpCMR from "./PopUpCMR"
 
@@ -13,34 +15,22 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
     const [selectedItem, setSelectedItem] = useState(null)
     const [previewUrl, setPreviewUrl] = useState(null)
     const [previewType, setPreviewType] = useState(null)
+    const { isLoading, setIsLoading } = useLoading()
 
     const onDoubleCLickHandler = async (item) => {
         if (item.type === "Folder") {
-            if (view === "trash") {
-                setCurrentFolderId(item.id)
-                return
-            }else if(view === 'shared'){
-                
-                setCurrentFolderId(item.id)
-                return
-            }
-            // console.log(currentFolderID, item.id)
-            try {
-                const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${item.id}`, { withCredentials: true })
-                // console.log(res.data)
-                setItems(res.data?.combinedData)
-                setParentFolderId(res.data?.currentFolder?.parentFolderId)
-                setCurrentFolderId(res.data?.currentFolder?.id)
-            } catch (err) {
-                console.error("Failed to open folder", err)
-            }
+            setIsLoading(true)
+            setCurrentFolderId(item.id)
+
         } else {
             try {
                 const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/download/${item?.id}`, {
                     withCredentials: true,
                     responseType: "blob"
                 })
+
                 const url = URL.createObjectURL(res.data)
+                
                 window.open(url)
                 setPreviewUrl(url)
                 setPreviewType(res.data.type)
@@ -79,7 +69,19 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
 
     return (
         <div className="table-responsive-container">
-            <table className="file-manager-table">
+            {isLoading ? (
+                <div className="loader-container">
+                    <Oval
+                        height={50}
+                        width={50}
+                        color="#3b82f6"
+                        secondaryColor="#dbe7ff"
+                        strokeWidth={4}
+                        strokeWidthSecondary={4}
+                    />
+                </div>
+            ) : (
+                <table className="file-manager-table">
                 <thead>
                     <tr>
                         <th className="th-name">Name</th>
@@ -115,7 +117,8 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                         </tr>
                     ))}
                 </tbody>
-            </table>
+                </table>
+            )}
 
             {contextMenu.show && (
                 <FileContextMenu

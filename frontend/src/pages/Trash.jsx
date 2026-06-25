@@ -5,6 +5,7 @@ import FileTable from '../components/FileTable'
 import DetailsPanel from '../components/DetailsPanel'
 import { FaSearch, FaBars } from 'react-icons/fa'
 import { useTheme } from '../context/ThemeContext'
+import { useLoading } from '../context/LoadingContext'
 
 const Trash = () => {
     const { isDarkMode } = useTheme()
@@ -15,10 +16,12 @@ const Trash = () => {
     const [currentFolderId, setCurrentFolderId] = useState("root")
     const [parentFolderId, setParentFolderId] = useState(null)
     const [breadcrumbs, setBreadcrumbs] = useState([])
+    const { setIsLoading } = useLoading()
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
     const fetchTrash = async (folderId = "root") => {
+        setIsLoading(true)
         try {
             const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listTrash?id=${folderId}`, {
                 withCredentials: true
@@ -28,6 +31,8 @@ const Trash = () => {
             setBreadcrumbs(res.data?.path || [])
         } catch (err) {
             console.error(err)
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -38,10 +43,11 @@ const Trash = () => {
 
     const handleBackClick = () => {
         if (parentFolderId && parentFolderId !== "root") {
+            setIsLoading(true)
             setCurrentFolderId(parentFolderId)
         } else {
+            setIsLoading(true)
             setCurrentFolderId("root")
-            fetchTrash("root")
         }
     }
 
@@ -79,7 +85,10 @@ const Trash = () => {
                                 {breadcrumbs.map((crumb, index) => (
                                 <span key={crumb.id} className="breadcrumb-item">
                                     <button
-                                        onClick={() => setCurrentFolderId(crumb.id)}
+                                        onClick={() => {
+                                            setIsLoading(true)
+                                            setCurrentFolderId(crumb.id)
+                                        }}
                                         className={
                                             index === breadcrumbs.length - 1
                                                 ? 'crumb-active'

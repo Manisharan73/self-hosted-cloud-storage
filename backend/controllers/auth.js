@@ -70,13 +70,13 @@ async function userLogin(req, res) {
         )
 
         res.cookie("token", accessToken, {
-            httpOnly: true,  
-            secure: true,   
-            sameSite: "None",  
+            httpOnly: true,
+            secure: true,
+            sameSite: "None",
             maxAge: 7 * 24 * 60 * 60 * 1000,
-            path: "/"        
+            path: "/"
         })
-        
+
         user.token = accessToken
         user.lastAccessedAt = Date.now()
         user.save()
@@ -210,7 +210,7 @@ async function userVerify(req, res) {
 }
 
 const sendVerificationEmail = async ({ id, email }) => {
-    const currentUrl = "https://cloudStorage.agdivya.xyz/"
+    const currentUrl = "http://localhost:3001/"
 
     const uniqueString = uuidv4() + id
     console.log(uniqueString)
@@ -223,16 +223,105 @@ const sendVerificationEmail = async ({ id, email }) => {
     })
 
     const mailOptions = {
-        from: process.env.AUTH_EMAIL,
+        from: `"NetVerse" <${process.env.AUTH_EMAIL}>`,
         to: email,
-        subject: "Verify Your Email",
+        subject: "Verify Your Email Address",
         html: `
-            <p>Verify your email to activate your account.</p>
-            <p><b>Link expires in 6 hours.</b></p>
-            <a href="${currentUrl}auth/verify/${id}/${uniqueString}">
-                Verify Email
-            </a>
-        `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #ffffff;
+                margin: 0;
+                padding: 0;
+            }
+
+            .container {
+                max-width: 600px;
+                margin: 40px auto;
+                background: rgb(255, 255, 255);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+
+            .header {
+                background: #2563eb;
+                color: white;
+                text-align: center;
+                padding: 30px;
+            }
+
+            .content {
+                padding: 40px;
+                color: #333;
+                line-height: 1.6;
+            }
+
+            .button {
+                display: inline-block;
+                padding: 14px 28px;
+                background: #2563eb;
+                color: white !important;
+                text-decoration: none;
+                border-radius: 8px;
+                font-weight: bold;
+                margin: 20px 0;
+            }
+
+            .footer {
+                text-align: center;
+                color: #666;
+                font-size: 13px;
+                padding: 20px;
+                background: #fafafa;
+            }
+
+            .link {
+                word-break: break-all;
+                color: #2563eb;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Welcome to NetVerse</h1>
+            </div>
+
+            <div class="content">
+                <h2>Verify Your Email Address</h2>
+
+                <p>
+                    Thanks for signing up! Please verify your email address to
+                    activate your account and start using NetVerse.
+                </p>
+
+                <center>
+                    <a
+                        class="button"
+                        href="${currentUrl}auth/verify/${id}/${uniqueString}"
+                    >
+                        Verify Email
+                    </a>
+                </center>
+
+                <p>
+                    This verification link will expire in
+                    <strong>6 hours</strong>.
+                </p>
+            </div>
+
+            <div class="footer">
+                © ${new Date().getFullYear()} NetVerse. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>
+    `
     }
 
     await transporter.sendMail(mailOptions)

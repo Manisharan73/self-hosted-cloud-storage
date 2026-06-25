@@ -3,11 +3,12 @@ import "../styles/PopUpCMR.css"
 import { IoClose } from "react-icons/io5"
 import axios from "axios"
 import { socket } from "../scripts/socket"
+import toast from 'react-hot-toast'
 
 const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles }) => {
     const [closing, setClosing] = useState(false)
     const [name, setName] = useState(popUp === "rename" ? selectedItem.name : "")
-    const [recipientId, setRecipientId] = useState("")
+    const [recipientIdentifier, setRecipientIdentifier] = useState("")
     const [permission, setPermission] = useState("read")
     const [loading, setLoading] = useState(false)
 
@@ -19,7 +20,7 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
             if (!name.trim()) return
             await handleRename(selectedItem.id, name)
         } else if (popUp === "share") {
-            if (!recipientId.trim()) return
+            if (!recipientIdentifier.trim()) return
             await handleShare()
         } else {
             if (!name.trim()) return
@@ -35,19 +36,21 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
             await axios.post(`${import.meta.env.VITE_BACKEND}/user/share`, {
                 itemId: selectedItem.id,
                 itemType: selectedItem.type.toLowerCase(),
-                sharedWithUserId: recipientId,
+                identifier: recipientIdentifier,
                 permission: permission
             }, { withCredentials: true })
 
             if (socket.connected) {
-                socket.emit("itemShared", recipientId)
+                socket.emit("itemShared", recipientIdentifier)
             } else {
                 console.log("Socket not connected")
             }
 
-            alert("Share invitation sent successfully!")
+            toast.success("Share invitation sent successfully!")
         } catch (err) {
-            console.error(err)
+            const errorMsg = err.response?.data?.msg || err.response?.data || 'Server error'
+            toast.error(errorMsg)
+            console.log(err)
         }
     }
 
@@ -62,10 +65,10 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
                 { withCredentials: true }
             )
             refreshFiles(currentFolderID)
-        }
-        catch (err) {
+        } catch (err) {
             console.log(err)
-            alert("Failed to rename folder/file")
+            const errorMsg = err.response?.data?.msg || err.response?.data || 'Server Error'
+            toast.error(errorMsg)
         }
     }
 
@@ -108,13 +111,13 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
                 <div className="popup-body">
                     {popUp === "share" ? (
                         <>
-                            <label className="popup-label">Recipient User ID</label>
+                            <label className="popup-label">Recipient Username or Email</label>
                             <input
                                 type="text"
                                 className="popup-input"
-                                placeholder="Enter user ID..."
-                                value={recipientId}
-                                onChange={(e) => setRecipientId(e.target.value)}
+                                placeholder="Enter username or email"
+                                value={recipientIdentifier}
+                                onChange={(e) => setRecipientIdentifier(e.target.value)}
                                 autoFocus
                                 required
                             />

@@ -4,12 +4,15 @@ const SharedItem = require("../models/sharedItem")
 const User = require("../models/user")
 const path = require("path")
 const axios = require("axios")
+const { Op } = require('sequelize')
 
 async function sharedItem(req, res) {
     try {
-        const { itemId, itemType, sharedWithUserId, permission } = req.body
+        console.log(req.body)
 
-        if (!itemId || !itemType || !sharedWithUserId) {
+        const { itemId, itemType, identifier, permission } = req.body
+
+        if (!itemId || !itemType || !identifier) {
             return res.status(400).json({ msg: "Missing required fields" })
         }
 
@@ -18,13 +21,25 @@ async function sharedItem(req, res) {
             return res.status(400).json({ msg: "Invalid itemType. Must be 'file' or 'folder'" })
         }
 
-        if (sharedWithUserId == req.user.id) {
-            return res.status(400).json({ msg: "You cannot share an item with yourself" })
-        }
+        const recipient = await User.findOne({
+            where: {
+                [Op.or]: [
+                    { email: identifier },
+                    { username: identifier }
+                ]
+            }
+        })
 
-        const recipient = await User.findByPk(sharedWithUserId)
+        console.log(recipient)
+
         if (!recipient) {
             return res.status(404).json({ msg: "The user you are trying to share with does not exist" })
+        }
+
+        if(recipient.id === req.user.id) {
+            return res.status(404).json({
+                msg: 'You cannot share an item with yourself'
+            })
         }
 
         const Model = type === 'file' ? File : Folder
@@ -46,7 +61,7 @@ async function sharedItem(req, res) {
             where: {
                 itemId,
                 itemType: type,
-                sharedWith: sharedWithUserId,
+                sharedWith: recipient.id,
                 ownerId: req.user.id
             },
             defaults: {
@@ -68,9 +83,8 @@ async function sharedItem(req, res) {
             msg: created ? "Item shared successfully" : "Share permissions updated",
             share
         })
-
     } catch (err) {
-        console.error("Share item error:", err)
+        console.error(err)
         return res.status(500).json({ error: "Failed to share item", details: err.message })
     }
 }

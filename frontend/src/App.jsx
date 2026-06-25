@@ -7,6 +7,8 @@ import Trash from './pages/Trash'
 import Shared from './pages/Shared'
 import { NotificationProvider } from './context/NotificationContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { LoadingProvider } from './context/LoadingContext'
+import { Toaster } from 'react-hot-toast'
 
 function App() {
     const ProtectedRoute = ({ children }) => {
@@ -21,20 +23,24 @@ function App() {
 
     return (
         <>
-            <ThemeProvider>
-                <NotificationProvider>
-                    <Router>
-                        <Routes>
-                            <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                            <Route path='/login-signup' element={<Login_SignUp />} />
-                            <Route path='/notifications' element={<Notifications />} />
-                            <Route path='/trash' element={<Trash />} />
-                            <Route path='/shared' element={<Shared />} />
-                            <Route path='*' element={<Navigate to='/' replace />} />
-                        </Routes>
-                    </Router>
-                </NotificationProvider>
-            </ThemeProvider>
+            <Toaster position='top center'/>
+
+            <LoadingProvider>
+                <ThemeProvider>
+                    <NotificationProvider>
+                        <Router>
+                            <Routes>
+                                <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                                <Route path='/login-signup' element={<Login_SignUp />} />
+                                <Route path='/notifications' element={<Notifications />} />
+                                <Route path='/trash' element={<Trash />} />
+                                <Route path='/shared' element={<Shared />} />
+                                <Route path='*' element={<Navigate to='/' replace />} />
+                            </Routes>
+                        </Router>
+                    </NotificationProvider>
+                </ThemeProvider>
+            </LoadingProvider>
         </>
     )
 }

@@ -3,6 +3,7 @@ import '../styles/Login_SignUp.css'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { MdDarkMode, MdLightMode } from "react-icons/md"
+import toast from 'react-hot-toast'
 
 const Login_SignUp = () => {
     const [isLogin, setIsLogin] = useState(true)
@@ -68,12 +69,20 @@ const Login_SignUp = () => {
                     localStorage.setItem('token', response.data.accessToken)
                     navigate('/', { replace: true })
                 } else {
-                    setIsLogin(true)
+                    toast.success('Account created successfully! A verification link has been sent to your email. Please verify your account before logging in.',
+                        {
+                            duration: 10000,
+                        }
+                    )
+
+                    setTimeout(() => {
+                        setIsLogin(true)
+                    }, 1000)
                 }
             }
         } catch (error) {
-            const errorMsg = error.response?.data?.msg || error.response?.data || "Server error"
-            alert(errorMsg)
+            const errorMsg = error.response?.data?.msg || error.response?.data || 'Server error';
+            toast.error(errorMsg);
         } finally {
             setLoading(false)
         }

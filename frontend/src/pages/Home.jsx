@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import '../styles/Home.css'
 import { MdOutlineFileUpload, MdOutlineFolder, MdHome, MdContentPaste } from "react-icons/md"
 import { FaSearch, FaBars } from 'react-icons/fa'
@@ -11,6 +11,8 @@ import { IoClose } from 'react-icons/io5'
 import ToastNotification from '../components/NotificationItem'
 import { useNotifications } from '../context/NotificationContext'
 import { Toaster } from "react-hot-toast"
+import { useLoading } from '../context/LoadingContext'
+import toast from 'react-hot-toast'
 
 const Home = () => {
     const { isDarkMode } = useTheme()
@@ -25,6 +27,7 @@ const Home = () => {
     const [popUp, setPopUp] = useState(null)
     const [breadcrumbs, setBreadcrumbs] = useState([])
     const { toasts, setToasts } = useNotifications()
+    const { setIsLoading } = useLoading()
 
     const [clipboard, setClipboard] = useState(() => {
         const saved = localStorage.getItem("clipboard")
@@ -52,20 +55,32 @@ const Home = () => {
 
     useEffect(() => { setCurrentFolderId("root") }, [])
 
+    const lastFetchedId = useRef(null)
+
     useEffect(() => {
         if (!currentFolderID) return
+        if (lastFetchedId.current === currentFolderID) return
         refreshFiles(currentFolderID)
     }, [currentFolderID])
 
     const refreshFiles = async (folderId) => {
         const id = folderId ?? "root"
+        lastFetchedId.current = id
+        setIsLoading(true)
         try {
             const res = await axios.get(`${import.meta.env.VITE_BACKEND}/file/list?id=${id}`, { withCredentials: true })
             setItems(res.data?.combinedData)
             setParentFolderId(res.data?.currentFolder?.parentFolderId)
-            setCurrentFolderId(res.data?.currentFolder?.id)
+
+            const realId = res.data?.currentFolder?.id
+            lastFetchedId.current = realId
+            setCurrentFolderId(realId)
+
             setBreadcrumbs(res.data?.path || [])
-        } catch (err) { console.error(err) }
+        } catch (err) { }
+        finally {
+            setIsLoading(false)
+        }
     }
 
     const handleFileUpload = async (event) => {
@@ -81,7 +96,11 @@ const Home = () => {
                 onUploadProgress: (p) => setUploadProgress(Math.round((p.loaded * 100) / p.total)),
                 withCredentials: true
             })
-        } catch (error) { alert("Upload failed.") } finally {
+        } catch (err) {
+            const errorMsg = err.response?.data?.error || 'Server Error'
+            toast.error(errorMsg)
+            console.log(err.response?.data)
+        } finally {
             setIsUploading(false)
             refreshFiles(currentFolderID)
         }
@@ -118,6 +137,7 @@ const Home = () => {
 
     const handleBackClick = () => {
         if (breadcrumbs.length > 1) {
+            setIsLoading(true)
             const parentId = breadcrumbs[breadcrumbs.length - 2].id;
             setCurrentFolderId(parentId);
         }
@@ -165,7 +185,10 @@ const Home = () => {
                                 {breadcrumbs.map((crumb, index) => (
                                     <span key={crumb.id} className="breadcrumb-item">
                                         <button
-                                            onClick={() => setCurrentFolderId(crumb.id)}
+                                            onClick={() => {
+                                                setIsLoading(true)
+                                                setCurrentFolderId(crumb.id)
+                                            }}
                                             className={
                                                 index === breadcrumbs.length - 1
                                                     ? 'crumb-active'

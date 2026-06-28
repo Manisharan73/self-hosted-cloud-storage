@@ -466,7 +466,6 @@ section-title {
     display: flex;
     align-items: center;
     font-size: 25px;
-    margin: 10px 0px;
 }
 
 .crumb-separator {

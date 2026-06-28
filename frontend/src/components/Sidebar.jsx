@@ -2,8 +2,8 @@ import React from 'react'
 import '../styles/Sidebar.css'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FaHome, FaBell } from "react-icons/fa"
-import { IoPerson, IoClose } from "react-icons/io5"
-import { FaTrashCan } from "react-icons/fa6"
+import { IoPerson, IoClose, IoShareSocial } from "react-icons/io5"
+import { FaTrashCan, FaShare } from "react-icons/fa6"
 import { LuLogOut } from "react-icons/lu"
 import { MdDarkMode, MdLightMode } from "react-icons/md"
 import { useNotifications } from '../context/NotificationContext'
@@ -54,6 +54,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
             <div className={`nav-item ${isActive('/shared')}`} onClick={() => handleNavigation("/shared")}>
                 <IoPerson className="nav-icon" /> <span>Shared with me</span>
+            </div>
+
+            <div className={`nav-item ${isActive('/shared-by-me')}`} onClick={() => handleNavigation("/shared-by-me")}>
+                <IoShareSocial className="nav-icon" /> <span>Shared by me</span>
             </div>
 
             <div className={`nav-item ${isActive('/trash')}`} onClick={() => handleNavigation("/trash")}>

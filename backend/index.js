@@ -30,7 +30,7 @@ app.use(
             'https://self-hosted-cloud-storage-p6j711cvy.vercel.app'
         ],
         credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
         allowedHeaders: ['Content-Type', 'Authorization']
     }
 ))
@@ -40,26 +40,25 @@ app.use(logHandler(process.env.LOGS_FILENAME))
 app.use(cookieParser())
 
 const sequelize = require('./services/sequelize')
-const User = require("./models/user")
-const Folder = require("./models/folder")
-const File = require("./models/file")
+require('./models/associations')
 
 async function initDb() {
     try {
         await sequelize.authenticate()
         console.log('Sequelize connected')
 
-        Folder.belongsTo(User, { as: 'owner', foreignKey: 'ownerId' });
-        User.hasMany(Folder, { foreignKey: 'ownerId' });
 
-        File.belongsTo(User, { as: 'owner', foreignKey: 'ownerId' });
-        User.hasMany(File, { foreignKey: 'ownerId' });
 
         await sequelize.sync()
     } catch (err) {
         console.error('DB connection failed:', err)
     }
 }
+
+app.use((req, res, next) => {
+    console.log(req.method, req.url)
+    next()
+})
 
 app.use("/file", jwtAuth, fileRouter)
 app.use("/folder", jwtAuth, folderRouter)

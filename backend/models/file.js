@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../services/sequelize')
-const Folder = require('./folder')
 
 const File = sequelize.define(
     'File',
@@ -48,6 +47,5 @@ const File = sequelize.define(
     }
 )
 
-File.belongsTo(Folder, { foreignKey: 'parentFolderId', as: 'parentFolder' })
 
 module.exports = File

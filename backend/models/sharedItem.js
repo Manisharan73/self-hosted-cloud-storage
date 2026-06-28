@@ -80,7 +80,7 @@ const SharedItem = sequelize.define(
         indexes: [
             {
                 unique: true,
-                fields: ['itemId', 'sharedWith']
+                fields: ['itemId', 'itemType', 'sharedWith']
             },
             {
                 fields: ['ownerId']

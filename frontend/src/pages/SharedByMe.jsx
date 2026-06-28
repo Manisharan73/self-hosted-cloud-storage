@@ -7,7 +7,7 @@ import { FaBars } from 'react-icons/fa'
 import { useTheme } from '../context/ThemeContext'
 import { useLoading } from '../context/LoadingContext'
 
-const Shared = () => {
+const SharedByMe = () => {
     const { isDarkMode } = useTheme()
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -20,17 +20,15 @@ const Shared = () => {
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode)
 
-    const fetchShared = async (folderId = "root") => {
+    const fetchSharedByMe = async (folderId = "root") => {
         setIsLoading(true)
         try {
-            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listShared?id=${folderId}`, {
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND}/user/listSharedByMe?id=${folderId}`, {
                 withCredentials: true
             })
-            console.log(res.data)
-            setItems(res.data?.combinedData)
+            setItems(res.data?.combinedData || [])
             setParentFolderId(res.data?.currentFolder?.parentFolderId)
             setBreadcrumbs(res.data?.path || [])
-            // console.log(breadcrumbs)
         } catch (err) {
             console.error(err)
         } finally {
@@ -40,7 +38,7 @@ const Shared = () => {
 
     useEffect(() => {
         setItems([])
-        fetchShared(currentFolderId)
+        fetchSharedByMe(currentFolderId)
     }, [currentFolderId])
 
     const handleBackClick = () => {
@@ -76,7 +74,7 @@ const Shared = () => {
                     </header>
 
                     <section className="section-container">
-                        <div className="section-header">
+                        <div className="section-header" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
                             <div className="breadcrumb-wrapper">
                                 {breadcrumbs.map((crumb, index) => (
                                     <span key={crumb.id} className="breadcrumb-item">
@@ -103,7 +101,7 @@ const Shared = () => {
 
                         {items.length === 0 && currentFolderId === "root" && !useLoading().isLoading ? (
                             <div style={{ padding: '2rem', textAlign: 'center', color: 'gray' }}>
-                                No one has shared any files with you yet.
+                                You haven't shared anything yet.
                             </div>
                         ) : (
                             <FileTable
@@ -112,17 +110,17 @@ const Shared = () => {
                                 selectedId={selectedItem?.id}
                                 setCurrentFolderId={setCurrentFolderId}
                                 onSelect={setSelectedItem}
-                                refreshFiles={() => fetchShared(currentFolderId)}
-                                view="shared"
+                                refreshFiles={() => fetchSharedByMe(currentFolderId)}
+                                view="shared-by-me"
                             />
                         )}
                     </section>
                 </div>
 
-                <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view="shared" />
+                <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view="shared-by-me" refreshFiles={() => fetchSharedByMe(currentFolderId)} />
             </main>
         </div>
     )
 }
 
-export default Shared
+export default SharedByMe

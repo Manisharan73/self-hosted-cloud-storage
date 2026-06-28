@@ -67,6 +67,29 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
         setSelectedItem(item)
     }
 
+    const getColumns = (currentView) => {
+        if (currentView === 'shared-by-me') {
+            return [
+                { key: 'shareCount', label: 'Shared Count', render: (item) => item.shareCount || 0 },
+                { key: 'lastSharedAt', label: 'Last Shared', render: (item) => formatDate(item.lastSharedAt) },
+                { key: 'size', label: 'Size', render: (item) => formatSize(item.size) }
+            ]
+        }
+        if (currentView === 'shared') {
+            return [
+                { key: 'owner', label: 'Owner', render: (item) => item.owner || 'Unknown' },
+                { key: 'date', label: 'Modified', render: (item) => formatDate(item.date) },
+                { key: 'size', label: 'Size', render: (item) => formatSize(item.size) }
+            ]
+        }
+        return [
+            { key: 'date', label: 'Modified', render: (item) => formatDate(item.date) },
+            { key: 'size', label: 'Size', render: (item) => formatSize(item.size) }
+        ]
+    }
+
+    const columns = getColumns(view)
+
     return (
         <div className="table-responsive-container">
             {isLoading ? (
@@ -85,8 +108,9 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                 <thead>
                     <tr>
                         <th className="th-name">Name</th>
-                        <th className="th-modified hide-mobile">Modified</th>
-                        <th className="th-size hide-mobile">Size</th>
+                        {columns.map(col => (
+                            <th key={col.key} className="th-modified hide-mobile">{col.label}</th>
+                        ))}
                     </tr>
                 </thead>
                 <tbody>
@@ -94,7 +118,7 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                         <tr
                             key={item.id}
                             onDoubleClick={() => onDoubleCLickHandler(item)}
-                            // onClick={() => onSelect && onSelect(item)}
+                            onClick={() => onSelect && onSelect(item)}
                             className={`table-row ${selectedId === item.id ? 'active' : ''}`}
                             onContextMenu={(e) => handleContextMenu(e, item)}
                         >
@@ -104,16 +128,25 @@ const FileTable = ({ data, selectedId, onSelect, setItems, setParentFolderId, se
                                         <img src={item.type === "Folder" ? folderIcon : fileIcon} alt="" width={28} height={28} />
                                     </span>
                                     <div className="text-details">
-                                        <span className="name-text">{item.name}</span>
-                                        {/* Mobile-only subtext */}
+                                        <span className="name-text">
+                                            {item.name}
+                                            {view === 'shared-by-me' && item.inheritedShare && (
+                                                <span style={{marginLeft: '8px', fontSize: '10px', backgroundColor: '#e2e8f0', color: '#475569', padding: '2px 6px', borderRadius: '10px'}}>
+                                                    Inherited
+                                                </span>
+                                            )}
+                                        </span>
                                         <span className="mobile-meta show-mobile">
                                             {formatDate(item.date)} • {formatSize(item.size)}
                                         </span>
                                     </div>
                                 </div>
                             </td>
-                            <td className="meta-cell hide-mobile">{formatDate(item.date)}</td>
-                            <td className="meta-cell hide-mobile">{formatSize(item.size)}</td>
+                            {columns.map(col => (
+                                <td key={col.key} className="meta-cell hide-mobile">
+                                    {col.render(item)}
+                                </td>
+                            ))}
                         </tr>
                     ))}
                 </tbody>

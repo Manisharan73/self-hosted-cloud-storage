@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../services/sequelize')
-const Folder = require("./folder")
-const File = require("./file")
 
 const User = sequelize.define(
     'User',
@@ -53,12 +51,6 @@ const User = sequelize.define(
     }
 )
 
-User.hasMany(Folder, { 
-    foreignKey: 'ownerId' 
-})
 
-User.hasMany(File, { 
-    foreignKey: 'ownerId' 
-})
 
 module.exports = User

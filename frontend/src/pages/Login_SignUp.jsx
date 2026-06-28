@@ -4,6 +4,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { MdDarkMode, MdLightMode } from "react-icons/md"
 import toast from 'react-hot-toast'
+import { socket } from '../scripts/socket'
 
 const Login_SignUp = () => {
     const [isLogin, setIsLogin] = useState(true)
@@ -67,6 +68,7 @@ const Login_SignUp = () => {
             if (response.status === 200 || response.status === 201) {
                 if (isLogin) {
                     localStorage.setItem('token', response.data.accessToken)
+                    socket.connect()
                     navigate('/', { replace: true })
                 } else {
                     toast.success('Account created successfully! A verification link has been sent to your email. Please verify your account before logging in.',

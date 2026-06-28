@@ -24,7 +24,17 @@ function App() {
 
     return (
         <>
-            <Toaster position='top center'/>
+            <Toaster 
+                position='top center' 
+                reverseOrder={true}
+                toastOptions={{
+                    style: {
+                        background: "transparent",
+                        boxShadow: "none",
+                        padding: 0,
+                        maxWidth: 800
+                    }
+            }}/>
 
             <LoadingProvider>
                 <ThemeProvider>

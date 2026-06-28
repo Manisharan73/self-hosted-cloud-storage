@@ -33,7 +33,7 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
 
     const handleShare = async () => {
         try {
-            await axios.post(`${import.meta.env.VITE_BACKEND}/user/share`, {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND}/user/share`, {
                 itemId: selectedItem.id,
                 itemType: selectedItem.type.toLowerCase(),
                 identifier: recipientIdentifier,
@@ -41,7 +41,8 @@ const PopUpCMR = ({ selectedItem, popUp, setPopUp, currentFolderID, refreshFiles
             }, { withCredentials: true })
 
             if (socket.connected) {
-                socket.emit("itemShared", recipientIdentifier)
+                const recipientId = response.data.share.sharedWith;
+                socket.emit("itemShared", recipientId)
             } else {
                 console.log("Socket not connected")
             }

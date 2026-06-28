@@ -27,7 +27,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     }
 
     const handleLogOut = () => {
-        localStorage.removeItem('token')
+        Cookies.remove("token")
         navigate('/login-signup', { replace: true })
     }
 

@@ -139,9 +139,9 @@ const Home = () => {
         if (breadcrumbs.length > 1) {
             setIsLoading(true)
             const parentId = breadcrumbs[breadcrumbs.length - 2].id;
-            setCurrentFolderId(parentId);
+            setCurrentFolderId(parentId)
         }
-    };
+    }
 
     return (
         <div className={`home-container ${isDarkMode ? 'dark' : ''}`}>
@@ -237,7 +237,7 @@ const Home = () => {
                         />
                     </section>
                 </div>
-                <div className="toast-wrapper">
+                {/* <div className="toast-wrapper">
                     <Toaster
                         position="top-right"
                         reverseOrder={true}
@@ -250,7 +250,7 @@ const Home = () => {
                             }
                         }}
                     />
-                </div>
+                </div> */}
                 <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view='storage' />
             </main>
         </div>

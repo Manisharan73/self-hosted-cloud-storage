@@ -23,7 +23,14 @@ async function socketAuth(socket, next) {
                     return next(new Error("User not found"))
                 }
 
-                socket.user = user.get({ plain: true })
+                const plainUser = user.get({ plain: true })
+                socket.user = {
+                    id: plainUser.id,
+                    username: plainUser.username,
+                    email: plainUser.email,
+                    name: plainUser.name,
+                    uniqueName: plainUser.uniqueName
+                }
                 next()
             } catch (dbErr) {
                 console.log(dbErr)

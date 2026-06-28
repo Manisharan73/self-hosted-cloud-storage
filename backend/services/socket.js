@@ -3,10 +3,13 @@ const { socketAuth, onlineUsers } = require('../middlewares/socketAuth')
 const SharedItem  = require("../models/sharedItem")
 const File = require("../models/file")
 const Folder = require("../models/folder")
+const User = require("../models/user")
 
 let io
 
 const shareNotifier = async (io, socket, userId, recipientId) => {
+    if (!recipientId) return;
+
     const whereClause = {
         sharedWith: recipientId,
         status: "active",
@@ -22,54 +25,61 @@ const shareNotifier = async (io, socket, userId, recipientId) => {
         where: whereClause
     })
 
-    for (const share of shared) {
+    const fileIds = []
+    const folderIds = []
+    const userIds = new Set()
+    
+    shared.forEach(share => {
+        if (share.itemType === 'file') fileIds.push(share.itemId)
+        else if (share.itemType === 'folder') folderIds.push(share.itemId)
+        userIds.add(share.ownerId)
+    })
 
-        let item = null
-        if (share.itemType === "file") {
-            item = await File.findOne({
-                where: {
-                    id: share.itemId,
-                    isTrashed: false
-                }
-            })
-        } else if (share.itemType === "folder") {
-            item = await Folder.findOne({
-                where: {
-                    id: share.itemId,
-                    isTrashed: false
-                }
-            })
-        }
+    const [files, folders, users] = await Promise.all([
+        fileIds.length > 0 ? File.findAll({ where: { id: fileIds, isTrashed: false } }) : [],
+        folderIds.length > 0 ? Folder.findAll({ where: { id: folderIds, isTrashed: false } }) : [],
+        User.findAll({ where: { id: Array.from(userIds) }, attributes: ['id', 'name', 'uniqueName', 'username', 'email'] })
+    ])
+
+    const fileMap = new Map(files.map(f => [f.id, f]))
+    const folderMap = new Map(folders.map(f => [f.id, f]))
+    const userMap = new Map(users.map(u => [u.id, u]))
+
+    for (const share of shared) {
+        const isFile = share.itemType === 'file'
+        const item = isFile ? fileMap.get(share.itemId) : folderMap.get(share.itemId)
         
         if (!item) continue
                 
-        console.log(`from ${userId} : to ${recipientId}`)
-        io.to(recipientId.toString()).emit("test", "hello")
-        io.to(recipientId.toString()).emit(
-            "shareNotification",
-            {
-                id: share.id,
-                type: share.itemType,
-                item,
-                from: {
-                    id: socket.user.id,
-                    username: socket.user.username,
-                    email: socket.user.email
-                },
-                message: share.itemType === "file"
-                    ? `${socket.user.username} shared file "${item.filename}"`
-                    : `${socket.user.username} shared folder "${item.name}"`,
-                createdAt: new Date()
+        const owner = userMap.get(share.ownerId)
+
+        const payload = {
+            shareId: share.id,
+            itemId: share.itemId,
+            itemName: isFile ? item.originalFilename : item.name,
+            itemType: share.itemType,
+            targetUser: owner ? {
+                id: owner.id,
+                name: owner.name,
+                uniqueName: owner.username
+            } : { id: share.ownerId, name: 'Unknown User' },
+            date: share.createdAt,
+            type: 'received',
+            message: isFile
+                ? `${owner ? owner.name : 'Someone'} shared file "${item.originalFilename}"`
+                : `${owner ? owner.name : 'Someone'} shared folder "${item.name}"`
+        }
+
+        io.to(recipientId.toString()).emit("shareNotification", payload, async (response) => {
+            if (response === 'ok') {
+                await share.update({ isDelivered: true })
             }
-        )
-        await share.update({
-            isDelivered: true
         })
     }
 }
 
 const initSocket = (server) => {
-    const io = new Server(server, {
+    io = new Server(server, {
         cors: {
             origin: [
                 'http://localhost:5173',
@@ -110,11 +120,12 @@ const initSocket = (server) => {
         socket.on("itemShared", async (recipientId) => {
             try {
                 const userId = socket.user.id
+                if (!recipientId) return;
 
-                shareNotifier(io, socket, userId, recipientId)
+                await shareNotifier(io, socket, userId, recipientId)
 
             } catch (err) {
-                console.error(err);
+                console.error("itemShared error:", err);
             }
         })
 

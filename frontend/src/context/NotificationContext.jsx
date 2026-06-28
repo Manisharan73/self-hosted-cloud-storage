@@ -45,7 +45,7 @@ export const NotificationProvider = ({ children }) => {
             console.log(data)
         })
 
-        socket.on("shareNotification", (notification) => {
+        socket.on("shareNotification", (notification, callback) => {
             console.log(notification)
             const id = crypto.randomUUID()
 
@@ -54,6 +54,20 @@ export const NotificationProvider = ({ children }) => {
                 ...notification
             }
             setToasts(prev => [...prev, toastData])
+            
+            setNotifications(prev => {
+                const type = notification.type || 'received'
+                
+                // Prevent duplicates
+                if (prev[type].some(n => n.shareId === notification.shareId)) {
+                    return prev
+                }
+                
+                return {
+                    ...prev,
+                    [type]: [notification, ...prev[type]]
+                }
+            })
 
             toast((t) => (
                 <NotificationItem notification={notification} />
@@ -64,6 +78,18 @@ export const NotificationProvider = ({ children }) => {
                     prev.filter(t => t.id !== id)
                 )
             }, 5000)
+            
+            if (typeof callback === 'function') {
+                callback('ok')
+            }
+        })
+
+        socket.on("shareAccepted", ({ shareId, recipientName }) => {
+            setNotifications(prev => ({
+                ...prev,
+                sent: prev.sent.filter(n => n.shareId !== shareId)
+            }))
+            toast.success(`${recipientName} accepted your share request!`)
         })
 
         socket.onAny((event, ...args) => {

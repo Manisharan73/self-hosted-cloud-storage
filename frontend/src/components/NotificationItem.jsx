@@ -9,19 +9,12 @@ import {
 import '../styles/NotificationItem.css'
 
 const NotificationItem = ({ notification, onAccept, onDecline }) => {
-    const { id, type, item, from, createdAt } = notification
-
-    const formatBytes = (bytes) => {
-        if (bytes === 0) return '0 Bytes'
-        const k = 1024
-        const sizes = ['Bytes', 'KB', 'MB', 'GB']
-        const i = Math.floor(Math.log(bytes) / Math.log(k))
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-    }
+    const { shareId, itemType, itemName, targetUser, date } = notification
 
     const formatNotificationDate = (dateString) => {
-        const date = new Date(dateString)
-        return date.toLocaleDateString('en-IN', {
+        if (!dateString) return ''
+        const dateObj = new Date(dateString)
+        return dateObj.toLocaleDateString('en-IN', {
             day: 'numeric',
             month: 'short',
             hour: '2-digit',
@@ -41,46 +34,34 @@ const NotificationItem = ({ notification, onAccept, onDecline }) => {
                 {/* Content Section */}
                 <div className="content-container">
                     <div className="header-row">
-                        <span className="username">@{from.username}</span>
+                        <span className="username">@{targetUser?.uniqueName || targetUser?.name || 'Unknown'}</span>
                         <div className="time-container">
                             <FiClock className="time-icon" />
-                            <span>{formatNotificationDate(createdAt)}</span>
+                            <span>{formatNotificationDate(date)}</span>
                         </div>
                     </div>
 
                     <p className="message">
-                        Shared a {type}: <span className="filename">{item.originalFilename}</span>
+                        Shared a {itemType}: <span className="filename">{itemName}</span>
                     </p>
-
-                    <div className="metadata-box">
-                        <div className="meta-item">
-                            <FiHardDrive className="meta-icon" />
-                            <span>{formatBytes(item.size)}</span>
-                        </div>
-                        <div className="meta-badge">
-                            {item.mimetype.split('/')[1] || 'Unknown'}
-                        </div>
-                    </div>
                 </div>
             </div>
 
             {/* Actions */}
-            <div className="actions-row">
-                <button
-                    onClick={() => onDecline(id)}
-                    className="btn btn-decline"
-                >
-                    <FiX className="btn-icon" />
-                    Decline
-                </button>
-                <button
-                    onClick={() => onAccept(id)}
-                    className="btn btn-accept"
-                >
-                    <FiCheck className="btn-icon" />
-                    Accept Share
-                </button>
-            </div>
+            {(onAccept || onDecline) && (
+                <div className="actions-row">
+                    {onDecline && (
+                        <button onClick={() => onDecline(shareId)} className="btn btn-decline">
+                            <FiX className="btn-icon" /> Decline
+                        </button>
+                    )}
+                    {onAccept && (
+                        <button onClick={() => onAccept(shareId)} className="btn btn-accept">
+                            <FiCheck className="btn-icon" /> Accept Share
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     )
 }

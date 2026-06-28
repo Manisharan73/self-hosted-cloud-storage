@@ -95,8 +95,8 @@ const Notifications = () => {
                                         <h3>{n.itemName}</h3>
                                         <p className="target-user">
                                             {activeTab === 'received' 
-                                                ? `From: ${n.targetUser}` 
-                                                : `To: ${n.targetUser}`}
+                                                ? `From: ${n.targetUser.name}` 
+                                                : `To: ${n.targetUser.name}`}
                                         </p>
                                         <p className="notif-date">{new Date(n.date).toLocaleDateString()}</p>
                                     </div>

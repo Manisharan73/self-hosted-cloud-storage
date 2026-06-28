@@ -6,6 +6,7 @@ const path = require("path")
 const axios = require("axios")
 const { Op } = require('sequelize')
 const sequelize = require('../services/sequelize')
+const { getIO } = require('../services/socket')
 
 async function sharedItem(req, res) {
     try {
@@ -161,6 +162,17 @@ async function saveSharedItem(req, res) {
 
         share.isSavedByRecipient = true
         await share.save()
+
+        try {
+            const io = getIO()
+            const recipient = await User.findByPk(req.user.id)
+            io.to(share.ownerId.toString()).emit("shareAccepted", {
+                shareId: share.id,
+                recipientName: recipient ? (recipient.username) : "Someone"
+            })
+        } catch (e) {
+            console.error("Failed to emit shareAccepted:", e)
+        }
 
         return res.status(200).json({ msg: "Item saved to your shared library" })
 

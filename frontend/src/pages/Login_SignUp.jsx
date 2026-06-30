@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import '../styles/Login_SignUp.css'
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MdDarkMode, MdLightMode } from "react-icons/md"
 import toast from 'react-hot-toast'
 import { socket } from '../scripts/socket'
@@ -10,6 +10,18 @@ const Login_SignUp = () => {
     const [isLogin, setIsLogin] = useState(true)
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+
+    useEffect(() => {
+        const message = searchParams.get("message")
+        if (searchParams.get("verified") === "true") {
+            setIsLogin(true)
+            toast.success(message || "Email verified successfully! Please login.", {
+                duration: 5000,
+            })
+            navigate("/login-signup", { replace: true })
+        }
+    }, [searchParams, navigate])
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('theme')

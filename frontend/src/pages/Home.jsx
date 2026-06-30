@@ -22,8 +22,12 @@ const Home = () => {
     const [parentFolderId, setParentFolderId] = useState(null)
     const [currentFolderID, setCurrentFolderId] = useState(null)
     const [selectedItem, setSelectedItem] = useState(null)
-    const [uploadProgress, setUploadProgress] = useState(0)
-    const [isUploading, setIsUploading] = useState(false)
+    const [upload, setUpload] = useState({
+        active: false,
+        progress: 0,
+        fileName: "",
+        completed: false
+    })
     const [popUp, setPopUp] = useState(null)
     const [breadcrumbs, setBreadcrumbs] = useState([])
     const { toasts, setToasts } = useNotifications()
@@ -86,23 +90,67 @@ const Home = () => {
     const handleFileUpload = async (event) => {
         const file = event.target.files[0]
         if (!file) return
+
         const formData = new FormData()
-        formData.append('file', file)
+        formData.append("file", file)
+
         const id = currentFolderID ?? "root"
-        setIsUploading(true)
+
+        setUpload({
+            active: true,
+            progress: 0,
+            fileName: file.name,
+            completed: false
+        })
+
         try {
-            await axios.post(`${import.meta.env.VITE_BACKEND}/file/upload/${id}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                onUploadProgress: (p) => setUploadProgress(Math.round((p.loaded * 100) / p.total)),
-                withCredentials: true
-            })
-        } catch (err) {
-            const errorMsg = err.response?.data?.error || 'Server Error'
-            toast.error(errorMsg)
-            console.log(err.response?.data)
-        } finally {
-            setIsUploading(false)
+            await axios.post(
+                `${import.meta.env.VITE_BACKEND}/file/upload/${id}`,
+                formData,
+                {
+                    withCredentials: true,
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    },
+                    onUploadProgress: (progressEvent) => {
+                        const progress = Math.round(
+                            (progressEvent.loaded * 100) / progressEvent.total
+                        )
+
+                        setUpload(prev => ({
+                            ...prev,
+                            progress
+                        }))
+                    }
+                }
+            )
+
+            setUpload(prev => ({
+                ...prev,
+                progress: 100,
+                completed: true
+            }))
+
             refreshFiles(currentFolderID)
+
+            setTimeout(() => {
+                setUpload({
+                    active: false,
+                    progress: 0,
+                    fileName: "",
+                    completed: false
+                })
+            }, 1500)
+
+        } catch (err) {
+            toast.error(err.response?.data?.error || "Upload failed")
+
+            setUpload({
+                active: false,
+                progress: 0,
+                fileName: "",
+                completed: false
+            })
         }
     }
 
@@ -169,9 +217,9 @@ const Home = () => {
 
                         <div className="header-actions">
                             <input type="file" id="file-upload" style={{ display: 'none' }} onChange={handleFileUpload} />
-                            <button className="upload-btn" onClick={() => document.getElementById('file-upload').click()} disabled={isUploading}>
+                            <button className="upload-btn" onClick={() => document.getElementById('file-upload').click()} disabled={upload.active}>
                                 <MdOutlineFileUpload />
-                                <span className="btn-text">{isUploading ? `${uploadProgress}%` : "Upload"}</span>
+                                <span className="btn-text">Upload</span>
                             </button>
                             <button className='upload-btn secondary' onClick={() => setPopUp("folder")}>
                                 <MdOutlineFolder /> <span className="btn-text">Create Folder</span>
@@ -252,6 +300,30 @@ const Home = () => {
                     />
                 </div> */}
                 <DetailsPanel item={selectedItem} onSelect={setSelectedItem} view='storage' />
+                
+                {upload.active && (
+                    <div className="upload-progress-card">
+                        <div className="upload-header">
+                            <span>
+                                {upload.completed
+                                    ? "Upload Complete"
+                                    : "Uploading..."}
+                            </span>
+                            <span>{upload.progress}%</span>
+                        </div>
+                
+                        <div className="upload-file">
+                            {upload.fileName}
+                        </div>
+                
+                        <div className="progress-track">
+                            <div
+                                className="progress-fill"
+                                style={{ width: `${upload.progress}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     )

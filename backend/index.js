@@ -55,11 +55,6 @@ async function initDb() {
     }
 }
 
-app.use((req, res, next) => {
-    console.log(req.method, req.url)
-    next()
-})
-
 app.use("/file", jwtAuth, fileRouter)
 app.use("/folder", jwtAuth, folderRouter)
 app.use("/auth", authRouter)

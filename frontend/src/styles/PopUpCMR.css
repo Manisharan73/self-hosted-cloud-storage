@@ -119,6 +119,12 @@
     font-weight: 600;
     border: none;
     cursor: pointer;
+    transition: all 0.2s;
+}
+
+.confirm-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
 }
 
 .cancel-btn {

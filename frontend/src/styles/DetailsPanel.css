@@ -102,6 +102,10 @@
     border-radius: 34px;
 }
 
+.slider:hover {
+    opacity: 0.8;
+}
+
 .slider:before {
     position: absolute;
     content: "";

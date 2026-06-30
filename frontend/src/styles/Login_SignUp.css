@@ -33,6 +33,10 @@
     transition: all 0.3s ease;
 }
 
+.auth-theme-toggle:hover {
+    transform: scale(1.1);
+}
+
 .auth-card {
     background: var(--card-bg);
     padding: 40px;
@@ -75,6 +79,10 @@
     color: var(--text-light);
     border-radius: 6px;
     transition: all 0.2s;
+}
+
+.auth-toggle button:hover:not(.active) {
+    background: rgba(128, 128, 128, 0.1);
 }
 
 .auth-toggle button.active {
@@ -121,6 +129,11 @@
     font-weight: 600;
     cursor: pointer;
     margin-top: 10px;
+    transition: background-color 0.2s;
+}
+
+.primary-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
 }
 
 .primary-btn:disabled {
@@ -140,6 +153,11 @@
     cursor: pointer;
     font-weight: 600;
     margin-left: 5px;
+    transition: text-decoration 0.2s;
+}
+
+.auth-footer span:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 480px) {

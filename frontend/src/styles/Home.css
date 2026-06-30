@@ -72,7 +72,7 @@ section-title {
     display: flex;
     flex-direction: row;
     overflow: hidden;
-    width: 100%;
+    flex: 1;
     height: 100%;
 }
 
@@ -129,6 +129,23 @@ section-title {
     gap: 8px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.upload-btn.secondary {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.upload-btn.secondary:hover:not(:disabled) {
+    background-color: var(--hover-bg);
+    filter: none;
 }
 
 .section-header {
@@ -309,6 +326,11 @@ section-title {
     font-size: 20px;
     margin-right: 15px;
     cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.mobile-menu-btn:hover {
+    transform: scale(1.1);
 }
 
 .header-left {
@@ -366,7 +388,7 @@ section-title {
 .home-container .main-content {
     display: flex;
     flex-direction: row;
-    width: 100%;
+    flex: 1;
     height: 100%;
     overflow: hidden;
 }
@@ -495,4 +517,62 @@ section-title {
     flex-direction: column;
     gap: 12px;
     z-index: 9999;
+}
+
+.upload-progress-card {
+    position: fixed;
+    right: 30px;
+    bottom: 30px;
+    width: 320px;
+
+    background: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.15);
+
+    padding: 16px;
+    z-index: 1000;
+
+    animation: slideUp .25s ease;
+}
+
+.upload-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.upload-file {
+    margin: 10px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progress-track {
+    height: 6px;
+    background: var(--item-bg);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary-blue);
+    transition: width .2s linear;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(25px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }

@@ -195,11 +195,10 @@ async function userVerify(req, res) {
 
         await createRootDir(userId)
 
-        return res.status(200).json({
-            success: true,
-            msg: "Email verified successfully"
-        })
-
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return res.redirect(
+            `${frontendUrl}/login-signup?verified=true&message=Email%20verified%20successfully`
+        )
     } catch (err) {
         console.error(err)
         return res.status(500).json({
